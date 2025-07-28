@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🕳 ABYSS INTERFACE</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    body {
+      margin: 0;
+      background: #000;
+      color: #00ffcc;
+      font-family: 'Share Tech Mono', monospace;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      text-shadow: 0 0 10px #ff00cc;
+    }
+
+    .console {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1rem;
+      border: 1px solid #333;
+      max-height: 70vh;
+      overflow-y: auto;
+      box-shadow: 0 0 20px #00ffcc33;
+      margin-top: 2rem;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 0.8rem;
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <h1>ACCESSING :: THE ABYSS</h1>
+  <div class="console" id="abyssConsole">
+    [INITIALIZING PROTOCOL...]
+  </div>
+  <div class="hint">The logs are not real. But the gaze is.</div>
+
+  <script>
+    // abyss.js (inlined)
+
+    (function () {
+      const messages = [
+        "🔮 Decoding soul resonance...",
+        "🧠 Neural lattice engaged...",
+        "☣ Injecting synthetic entropy...",
+        "⚠ Phantom signal received from ::NODE_Δ13",
+        "👁 The eye opens. It sees you.",
+        "⌛ Syncing with nonlocal dimensions...",
+        "∴ Collapse complete. Welcome, Observer.",
+      ];
+
+      const asciiFace = `
+        (╯°□°）╯︵ ┻━┻
+        // LOOK INTO THE VOID //
+      `;
+
+      const consoleDiv = document.getElementById("abyssConsole");
+
+      async function initSequence() {
+        for (const msg of messages) {
+          await sleep(randomDelay(800, 2000));
+          logToConsole(msg);
+        }
+
+        await sleep(1500);
+        logToConsole(asciiFace, "#ff3300");
+        glitchDOM();
+      }
+
+      function logToConsole(msg, color = "#00ffcc") {
+        const p = document.createElement("p");
+        p.textContent = msg;
+        p.style.color = color;
+        p.style.margin = "0.3rem 0";
+        consoleDiv.appendChild(p);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        console.log("%c" + msg, `color: ${color}; font-family: monospace;`);
+      }
+
+      function glitchDOM() {
+        const body = document.body;
+        let glitchInterval = setInterval(() => {
+          body.style.transform = `translate(${Math.random() * 4 - 2}px, ${Math.random() * 4 - 2}px) rotate(${Math.random() * 1 - 0.5}deg)`;
+          body.style.filter = `contrast(1.1) hue-rotate(${Math.random() * 360}deg)`;
+        }, 80);
+
+        setTimeout(() => {
+          clearInterval(glitchInterval);
+          body.style.transform = "";
+          body.style.filter = "";
+          logToConsole("✔ Stability Restored", "#00ff99");
+        }, 5000);
+      }
+
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      function randomDelay(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      // Autostart
+      initSequence();
+    })();
+  </script>
+</body>
+</html>
+
