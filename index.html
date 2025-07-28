@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>4047x-CORE::PORTAL</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0f0f1f;
+      color: #00ffcc;
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
+    }
+    .scanlines::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 255, 200, 0.03),
+        rgba(0, 255, 200, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+    .center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    h1 {
+      font-size: 3rem;
+      animation: glitch 1.5s infinite;
+    }
+    p {
+      margin-top: 2rem;
+      font-size: 1.2rem;
+    }
+    a {
+      color: #ff99ff;
+      text-decoration: none;
+    }
+    a:hover {
+      color: #ffff66;
+      background: rgba(255,255,255,0.05);
+    }
+    @keyframes glitch {
+      0% { text-shadow: 2px 0 red, -2px 0 cyan; }
+      20% { text-shadow: -2px 0 red, 2px 0 cyan; }
+      40% { text-shadow: 2px 2px red, -2px -2px cyan; }
+      60% { text-shadow: 0 0 red, 0 0 cyan; }
+      80% { text-shadow: 4px 0 red, -4px 0 cyan; }
+      100% { text-shadow: 0 0 red, 0 0 cyan; }
+    }
+    .ascii {
+      margin-top: 3rem;
+      white-space: pre;
+      color: #4444ff;
+    }
+    .hint {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      font-size: 0.8rem;
+      opacity: 0.3;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body class="scanlines">
+  <div class="center">
+    <h1>~4047x PORTAL~</h1>
+    <p>
+      Ξ Access node: <a href="https://github.com/dlvy">github://dlvy</a><br />
+      ▒▒▒ Initializing thoughts... <br />
+      ☺ SYSTEM IDLE — awaiting entropy ☺
+    </p>
+    <div class="ascii">
+      <pre>
+        ░░▓▓▒▒░░⚠░░▒▒▓▓░░
+      ════▶ ▶ [ SYSTEM CORE ACCESS GRANTED ]
+        ░░▓▓▒▒░░⚠░░▒▒▓▓░░
+      </pre>
+    </div>
+  </div>
+  <div class="hint">
+    <!-- Easter Egg Tooltip -->
+    ⓘ Hint: Click 3 times to reveal 🔐
+  </div>
+  <script>
+    let clicks = 0;
+    document.body.addEventListener('click', () => {
+      clicks++;
+      if (clicks === 3) {
+        alert("🔓 Secret unlocked: look into the /abyss.html");
+      }
+    });
+  </script>
+</body>
+</html>
+
