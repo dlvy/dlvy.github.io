@@ -83,9 +83,44 @@
       <input id="emojiInput" type="text" value="😎" maxlength="4" autocomplete="off" spellcheck="false" />
       <button id="randomEmojiBtn" title="Random Emoji">🎲</button>
     </div>
+      <div class="row">
+        <span id="emojiChoices" style="display:flex;gap:4px;margin-left:8px;">
+        <button class="emoji-choice" type="button">🗿</button>
+        <button class="emoji-choice" type="button">📡</button>
+        <button class="emoji-choice" type="button">🧬</button>
+        <button class="emoji-choice" type="button">🐏</button>
+        <button class="emoji-choice" type="button">🐱</button>
+        <button class="emoji-choice" type="button">🦄</button>
+        <button class="emoji-choice" type="button">🧞‍♂️</button>
+        <button class="emoji-choice" type="button">🍄</button>
+        <button class="emoji-choice" type="button">🦾</button>
+        </span>
+    </div>
+    <div class="row">
+      <span id="emojiChoices" style="display:flex;gap:4px;margin-left:8px;">
+        <button class="emoji-choice" type="button">🔮</button>
+        <button class="emoji-choice" type="button">💰</button>
+        <button class="emoji-choice" type="button">📦</button>
+        <button class="emoji-choice" type="button">💡</button>
+        <button class="emoji-choice" type="button">🛡</button>
+        <button class="emoji-choice" type="button">⚗️</button>
+        <button class="emoji-choice" type="button">💎</button>
+        <button class="emoji-choice" type="button">🩻</button>
+        <button class="emoji-choice" type="button">🚏</button>
+      </span>
+      </div>
   </label>
 
-  <label>Gradient Colors:
+  <label>Background Style:
+    <select id="bgType">
+      <option value="gradient">Gradient</option>
+      <option value="tiles">Tiles</option>
+      <option value="dots">Dots</option>
+      <option value="stripes">Stripes</option>
+    </select>
+  </label>
+
+  <label>Background Colors:
     <div class="row">
       <input id="c1" type="color" value="#ff7a18" />
       <input id="c2" type="color" value="#6a11cb" />
@@ -103,13 +138,15 @@
   <label>Filter:
     <select id="filterSelect">
       <option value="none">None</option>
-      <option value="sepia">Sepia</option>
       <option value="vaporwave">Vaporwave</option>
-      <option value="zxspectrum">ZX Spectrum</option>
-      <option value="amiga">Amiga</option>
-      <option value="brutalism">Brutalism</option>
-      <option value="retrofuturism">Retrofuturism</option>
-      <option value="psychedelic">Psychedelic</option>
+      <option value="colorswap">Color Swap</option>
+      <option value="duotone">Duotone</option>
+      <option value="glitch">Glitch</option>
+      <option value="posterize">Posterize</option>
+      <option value="neonglow">Neon Glow</option>
+      <option value="invert">Invert</option>
+      <option value="solarize">Solarize</option>
+      <option value="outline">Outline</option>
     </select>
   </label>
 
@@ -203,15 +240,7 @@ function applyFilter(ctx, size, filter) {
   const imageData = ctx.getImageData(0, 0, size, size);
   const data = imageData.data;
 
-  if (filter === 'sepia') {
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i], g = data[i+1], b = data[i+2];
-      data[i] = clamp((r * .393) + (g *.769) + (b * .189), 0, 255);
-      data[i+1] = clamp((r * .349) + (g *.686) + (b * .168), 0, 255);
-      data[i+2] = clamp((r * .272) + (g *.534) + (b * .131), 0, 255);
-    }
-  }
-  else if (filter === 'vaporwave') {
+  if (filter === 'vaporwave') {
     function rgbToHsl(r, g, b) {
       r /= 255; g /= 255; b /= 255;
       const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -249,265 +278,212 @@ function applyFilter(ctx, size, filter) {
       }
       return [r, g, b];
     }
-
-    // Rotate hue by ~270 degrees (0.75 in [0,1] range)
     const hueShift = 0.75;
-
     for (let i = 0; i < data.length; i += 4) {
       let [h, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2]);
       h = (h + hueShift) % 1;
-      s = Math.min(1, s * 1.4); // boost saturation a bit
-      l = Math.min(1, l * 1.1); // boost lightness slightly
+      s = Math.min(1, s * 1.4);
+      l = Math.min(1, l * 1.1);
       const [r, g, b] = hslToRgb(h, s, l);
       data[i] = clamp(r, 0, 255);
       data[i + 1] = clamp(g, 0, 255);
       data[i + 2] = clamp(b, 0, 255);
     }
   }
-  else if (filter === 'zxspectrum') {
-    // ZX Spectrum 15-color palette (normal + bright)
-    const palette = [
-      [0,0,0],          // black
-      [0,0,192],        // blue
-      [192,0,0],        // red
-      [192,0,192],      // magenta
-      [0,192,0],        // green
-      [0,192,192],      // cyan
-      [192,192,0],      // yellow
-      [192,192,192],    // white (normal)
-      [0,0,255],        // bright blue
-      [255,0,0],        // bright red
-      [255,0,255],      // bright magenta
-      [0,255,0],        // bright green
-      [0,255,255],      // bright cyan
-      [255,255,0],      // bright yellow
-      [255,255,255],    // bright white
-    ];
-    function findClosestColor(r, g, b) {
-      let bestColor = palette[0];
-      let bestDist = Infinity;
-      for (const c of palette) {
-        const dr = r - c[0];
-        const dg = g - c[1];
-        const db = b - c[2];
-        const dist = dr*dr + dg*dg + db*db;
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestColor = c;
-        }
-      }
-      return bestColor;
+  else if (filter === 'colorswap') {
+    // Swap R/G/B channels for a surreal effect
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i+1], b = data[i+2];
+      data[i] = g;
+      data[i+1] = b;
+      data[i+2] = r;
     }
+  }
+  else if (filter === 'duotone') {
+    // Map to two colors: purple and yellow
+    const cA = [128, 0, 255];
+    const cB = [255, 220, 0];
+    for (let i = 0; i < data.length; i += 4) {
+      const avg = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+      const t = avg / 255;
+      data[i] = Math.round(cA[0] * (1-t) + cB[0] * t);
+      data[i+1] = Math.round(cA[1] * (1-t) + cB[1] * t);
+      data[i+2] = Math.round(cA[2] * (1-t) + cB[2] * t);
+    }
+  }
+  else if (filter === 'glitch') {
+    // Pixel-level random offset for a noisy glitch effect
     const w = size, h = size;
+    const copy = new Uint8ClampedArray(data);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const idx = (y*w + x)*4;
-        const oldR = data[idx];
-        const oldG = data[idx+1];
-        const oldB = data[idx+2];
-
-        const newColor = findClosestColor(oldR, oldG, oldB);
-
-        const errR = oldR - newColor[0];
-        const errG = oldG - newColor[1];
-        const errB = oldB - newColor[2];
-
-        data[idx] = newColor[0];
-        data[idx+1] = newColor[1];
-        data[idx+2] = newColor[2];
-
-        // Floyd-Steinberg dithering diffusion
-        function diffuse(dx, dy, factor) {
-          const x1 = x + dx;
-          const y1 = y + dy;
-          if (x1 >= 0 && x1 < w && y1 >= 0 && y1 < h) {
-            const i1 = (y1*w + x1)*4;
-            data[i1] = clamp(data[i1] + errR * factor, 0, 255);
-            data[i1+1] = clamp(data[i1+1] + errG * factor, 0, 255);
-            data[i1+2] = clamp(data[i1+2] + errB * factor, 0, 255);
-          }
-        }
+        // Randomly offset pixel horizontally and vertically
+        const dx = clamp(x + Math.floor((Math.random()-0.5)*4), 0, w-1);
+        const dy = clamp(y + Math.floor((Math.random()-0.5)*2), 0, h-1);
+        const srcIdx = (dy*w + dx)*4;
+        data[idx] = copy[srcIdx];
+        data[idx+1] = copy[srcIdx+1];
+        data[idx+2] = copy[srcIdx+2];
       }
     }
   }
-  else if (filter === 'amiga') {
-    // Amiga OCS/ECS 32-color-ish palette + dithering
-    const amigaPalette = [
-      [0,0,0],[255,255,255],[0,0,170],[0,170,0],[0,170,170],[170,0,0],[170,0,170],[170,85,0],
-      [85,85,85],[85,85,255],[85,255,85],[85,255,255],[255,85,85],[255,85,255],[255,255,85],[255,255,255],
-      [43,43,43],[43,43,213],[43,213,43],[43,213,213],[213,43,43],[213,43,213],[213,128,43],[128,128,128],
-      [128,128,255],[128,255,128],[128,255,255],[255,128,128],[255,128,255],[255,255,128],[255,255,255],[0,0,0]
-    ];
-    floydSteinbergDither(data, size, size, amigaPalette);
-  }
-  else if (filter === 'brutalism') {
-    // Brutalist palette - high contrast primary + black/white + accent
-    const palette = [
-      [0, 0, 0],         // black
-      [255, 255, 255],   // white
-      [255, 0, 0],       // red
-      [0, 0, 255],       // blue
-      [255, 255, 0],     // yellow
-      [0, 255, 0],       // green
-      [255, 165, 0],     // orange
-    ];
-
-    function findClosestColor(r, g, b) {
-      let bestColor = palette[0];
-      let bestDist = Infinity;
-      for (const c of palette) {
-        const dr = r - c[0];
-        const dg = g - c[1];
-        const db = b - c[2];
-        const dist = dr*dr + dg*dg + db*db;
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestColor = c;
-        }
-      }
-      return bestColor;
+  else if (filter === 'posterize') {
+    // Reduce color depth to 4 levels per channel
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = Math.round(data[i] / 64) * 64;
+      data[i+1] = Math.round(data[i+1] / 64) * 64;
+      data[i+2] = Math.round(data[i+2] / 64) * 64;
     }
-
+  }
+  else if (filter === 'neonglow') {
+    // Boost highlights and add glow
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i], g = data[i+1], b = data[i+2];
+      const avg = (r+g+b)/3;
+      if (avg > 180) {
+        r = clamp(r + 60, 0, 255);
+        g = clamp(g + 60, 0, 255);
+        b = clamp(b + 60, 0, 255);
+      }
+      // Add colored glow
+      if (avg > 220) {
+        r = clamp(r + 30, 0, 255);
+        b = clamp(b + 30, 0, 255);
+      }
+      data[i] = r;
+      data[i+1] = g;
+      data[i+2] = b;
+    }
+  }
+  else if (filter === 'invert') {
+    // Invert colors
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 255 - data[i];
+      data[i+1] = 255 - data[i+1];
+      data[i+2] = 255 - data[i+2];
+    }
+  }
+  else if (filter === 'solarize') {
+    // Solarize: invert colors above threshold
+    for (let i = 0; i < data.length; i += 4) {
+      for (let c = 0; c < 3; c++) {
+        data[i+c] = data[i+c] > 128 ? 255-data[i+c] : data[i+c];
+      }
+    }
+  }
+  else if (filter === 'outline') {
+    // Simple edge detection (Sobel)
     const w = size, h = size;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
+    const out = new Uint8ClampedArray(data.length);
+    function getGray(i) {
+      return 0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
+    }
+    for (let y = 1; y < h-1; y++) {
+      for (let x = 1; x < w-1; x++) {
         const idx = (y*w + x)*4;
-        let r = data[idx], g = data[idx+1], b = data[idx+2];
-
-        // Boost contrast: stretch colors away from mid-gray (128)
-        r = r < 128 ? r * 0.7 : Math.min(255, 128 + (r - 128) * 1.5);
-        g = g < 128 ? g * 0.7 : Math.min(255, 128 + (g - 128) * 1.5);
-        b = b < 128 ? b * 0.7 : Math.min(255, 128 + (b - 128) * 1.5);
-
-        // Posterize by mapping to closest palette color
-        const [nr, ng, nb] = findClosestColor(r, g, b);
-
-        // Add subtle grain noise for texture
-        const noise = (Math.random() - 0.5) * 30;
-
-        data[idx] = clamp(nr + noise, 0, 255);
-        data[idx+1] = clamp(ng + noise, 0, 255);
-        data[idx+2] = clamp(nb + noise, 0, 255);
+        const gx = getGray(idx-4) - getGray(idx+4);
+        const gy = getGray(idx-w*4) - getGray(idx+w*4);
+        let mag = Math.sqrt(gx*gx + gy*gy);
+        mag = clamp(mag*2,0,255);
+        out[idx] = out[idx+1] = out[idx+2] = mag;
+        out[idx+3] = 255;
       }
     }
-  }
-  else if (filter === 'retrofuturism') {
-    // Teal-orange duotone + light grain noise
-    for (let i=0; i<data.length; i+=4) {
-      const avg = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
-      // Map grayscale to duotone: teal low, orange high
-      data[i] = clamp(avg * 0.3 + 20,0,255);    // teal R low
-      data[i+1] = clamp(avg * 0.6 + 80,0,255);  // teal G mid
-      data[i+2] = clamp(avg * 0.6 + 70,0,255);  // teal B mid
-      // Add orange highlight on bright parts
-      if(avg > 128){
-        data[i] = clamp(data[i] + (avg-128)*0.7, 0, 255); // more R
-        data[i+1] = clamp(data[i+1] - (avg-128)*0.4, 0, 255); // less G
-        data[i+2] = clamp(data[i+2] - (avg-128)*0.6, 0, 255); // less B
-      }
-      // Add grain noise
-      const noise = (Math.random() - 0.5)*15;
-      data[i] = clamp(data[i] + noise, 0, 255);
-      data[i+1] = clamp(data[i+1] + noise, 0, 255);
-      data[i+2] = clamp(data[i+2] + noise, 0, 255);
-    }
-  }
-  else if (filter === 'psychedelic') {
-    // Hue shift + saturation boost + radial swirl approx
-    function rgbToHsl(r,g,b) {
-      r /= 255; g /= 255; b /= 255;
-      const max = Math.max(r,g,b), min = Math.min(r,g,b);
-      let h=0, s=0, l=(max+min)/2;
-      if(max !== min){
-        const d = max - min;
-        s = l > 0.5 ? d/(2 - max - min) : d/(max + min);
-        switch(max){
-          case r: h = (g - b)/d + (g < b ? 6 : 0); break;
-          case g: h = (b - r)/d + 2; break;
-          case b: h = (r - g)/d + 4; break;
-        }
-        h /= 6;
-      }
-      return [h,s,l];
-    }
-    function hslToRgb(h,s,l){
-      let r,g,b;
-      if(s === 0){
-        r=g=b=l*255;
-      } else {
-        function hue2rgb(p,q,t){
-          if(t<0) t+=1;
-          if(t>1) t-=1;
-          if(t<1/6) return p+(q-p)*6*t;
-          if(t<1/2) return q;
-          if(t<2/3) return p+(q-p)*(2/3 - t)*6;
-          return p;
-        }
-        const q = l < 0.5 ? l*(1+s) : l + s - l*s;
-        const p = 2*l - q;
-        r = hue2rgb(p,q,h + 1/3)*255;
-        g = hue2rgb(p,q,h)*255;
-        b = hue2rgb(p,q,h - 1/3)*255;
-      }
-      return [r,g,b];
-    }
-
-    const cx = size/2, cy = size/2;
-    for(let y=0; y<size; y++){
-      for(let x=0; x<size; x++){
-        const i = (y*size + x)*4;
-        let r = data[i], g = data[i+1], b = data[i+2];
-
-        // Convert RGB to HSL
-        let [h,s,l] = rgbToHsl(r,g,b);
-        // Radial swirl offset angle based on distance
-        const dx = x - cx;
-        const dy = y - cy;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const angle = Math.atan2(dy, dx) + 0.02 * dist;
-
-        // Shift hue by angle and add a cycling offset
-        h = (h + angle / (2*Math.PI) + 0.3) % 1;
-        // Boost saturation and lightness for psychedelia
-        s = clamp(s * 1.5, 0, 1);
-        l = clamp(l * 1.1, 0, 1);
-
-        [r,g,b] = hslToRgb(h,s,l);
-        data[i] = r; data[i+1] = g; data[i+2] = b;
-      }
+    for (let i = 0; i < data.length; i++) {
+      data[i] = out[i];
     }
   }
   ctx.putImageData(imageData, 0, 0);
 }
 
 async function drawAvatar(ctx, size, emoji, c1, c2, gradType, filter) {
-  // Draw gradient background
-  let grad;
-  if (gradType === 'radial') {
-    grad = ctx.createRadialGradient(size/2, size/2, size*0.05, size/2, size/2, size*0.7);
-  } else {
-    grad = ctx.createLinearGradient(0, 0, size, size);
+  // Draw creative backgrounds
+  const bgType = document.getElementById('bgType')?.value || 'gradient';
+  if (bgType === 'gradient') {
+    let grad;
+    if (gradType === 'radial') {
+      grad = ctx.createRadialGradient(size/2, size/2, size*0.05, size/2, size/2, size*0.7);
+    } else {
+      grad = ctx.createLinearGradient(0, 0, size, size);
+    }
+    grad.addColorStop(0, c1);
+    grad.addColorStop(1, c2);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+  } else if (bgType === 'tiles') {
+    // Draw a tile pattern
+    ctx.fillStyle = c1;
+    ctx.fillRect(0, 0, size, size);
+    ctx.save();
+    for (let y = 0; y < size; y += size/8) {
+      for (let x = 0; x < size; x += size/8) {
+        ctx.fillStyle = ((x+y)/(size/8))%2===0 ? c2 : '#fff2';
+        ctx.fillRect(x, y, size/8, size/8);
+      }
+    }
+    ctx.restore();
+  } else if (bgType === 'dots') {
+    // Draw a polka dot pattern
+    ctx.fillStyle = c2;
+    ctx.fillRect(0, 0, size, size);
+    ctx.save();
+    for (let y = size/12; y < size; y += size/6) {
+      for (let x = size/12; x < size; x += size/6) {
+        ctx.beginPath();
+        ctx.arc(x, y, size/18, 0, 2*Math.PI);
+        ctx.fillStyle = c1;
+        ctx.globalAlpha = 0.7;
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  } else if (bgType === 'stripes') {
+    // Draw diagonal stripes
+    ctx.fillStyle = c2;
+    ctx.fillRect(0, 0, size, size);
+    ctx.save();
+    ctx.rotate(-Math.PI/8);
+    for (let i = -size; i < size*2; i += size/7) {
+      ctx.beginPath();
+      ctx.rect(i, 0, size/14, size*2);
+      ctx.fillStyle = c1;
+      ctx.globalAlpha = 0.5;
+      ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
   }
-  grad.addColorStop(0, c1);
-  grad.addColorStop(1, c2);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
 
-  // Load emoji SVG image
-  const imgSrc = await loadEmojiSVG(emoji);
-  const img = new Image();
-  await new Promise((resolve, reject) => {
-    img.onload = resolve;
-    img.onerror = () => {
-      // fallback emoji if loading fails
-      document.getElementById('emojiInput').value = '😎';
-      reject(new Error("Failed to load emoji SVG, reset to 😎"));
-    };
-    img.src = imgSrc;
-  });
+  // Load emoji SVG image, fallback to text if fails
+  let svgLoaded = false;
+  let img;
+  try {
+    const imgSrc = await loadEmojiSVG(emoji);
+    img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = imgSrc;
+    });
+    svgLoaded = true;
+  } catch (e) {
+    svgLoaded = false;
+  }
 
   const padding = size * 0.1;
-  ctx.drawImage(img, padding, padding, size - padding*2, size - padding*2);
+  if (svgLoaded) {
+    ctx.drawImage(img, padding, padding, size - padding*2, size - padding*2);
+  } else {
+    // Fallback: render emoji as text
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+  ctx.font = `bold ${size * 0.82}px sans-serif`;
+    ctx.fillText(emoji, size/2, size/2);
+    ctx.restore();
+  }
 
   // Apply filter
   applyFilter(ctx, size, filter);
@@ -519,11 +495,12 @@ async function renderPreview() {
   const c2 = document.getElementById('c2').value;
   const gradType = document.getElementById('gradType').value;
   const filter = document.getElementById('filterSelect').value;
+  const bgType = document.getElementById('bgType')?.value || 'gradient';
   const canvas = document.getElementById('preview');
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   try {
-    await drawAvatar(ctx, canvas.width, emoji, c1, c2, gradType, filter);
+    await drawAvatar(ctx, canvas.width, emoji, c1, c2, gradType, filter, bgType);
   } catch(e) {
     console.error(e);
   }
@@ -535,6 +512,7 @@ async function exportPNG() {
   const c2 = document.getElementById('c2').value;
   const gradType = document.getElementById('gradType').value;
   const filter = document.getElementById('filterSelect').value;
+  const bgType = document.getElementById('bgType')?.value || 'gradient';
   let size = parseInt(document.getElementById('exportSize').value, 10);
   if(isNaN(size) || size < 32) size = 200;
   if(size > 4096) size = 4096;
@@ -544,7 +522,7 @@ async function exportPNG() {
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   try {
-    await drawAvatar(ctx, size, emoji, c1, c2, gradType, filter);
+    await drawAvatar(ctx, size, emoji, c1, c2, gradType, filter, bgType);
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -569,12 +547,27 @@ function randomGradient() {
   renderPreview();
 }
 
+
 ['emojiInput','c1','c2','gradType','filterSelect','exportSize'].forEach(id => {
   document.getElementById(id).addEventListener('input', renderPreview);
+});
+document.getElementById('bgType').addEventListener('change', function() {
+  const canvas = document.getElementById('preview');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  renderPreview();
 });
 document.getElementById('randomEmojiBtn').addEventListener('click', randomEmoji);
 document.getElementById('randomGradientBtn').addEventListener('click', randomGradient);
 document.getElementById('exportBtn').addEventListener('click', exportPNG);
+
+// Emoji choices click handler
+document.querySelectorAll('.emoji-choice').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.getElementById('emojiInput').value = this.textContent;
+    renderPreview();
+  });
+});
 
 renderPreview();
 </script>
