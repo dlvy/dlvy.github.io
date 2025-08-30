@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Epoch Converter</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#06b6d4;--glass:rgba(255,255,255,0.03)}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#061023 0%, #071426 100%);color:#e6eef6}
+    .wrap{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+    .card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input[type=text], select, textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit}
+    .row{display:flex;gap:10px}
+    .col{flex:1}
+    .btn{background:linear-gradient(90deg,var(--accent),#3b82f6);border:none;padding:8px 12px;color:#022;cursor:pointer;border-radius:8px}
+    .muted{color:var(--muted)}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:8px;text-align:left;border-bottom:1px dashed rgba(255,255,255,0.03);font-size:13px}
+    .small{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:8px;margin-top:8px}
+    button.icon{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:8px;color:var(--muted);cursor:pointer}
+    footer{margin-top:18px;color:var(--muted);font-size:12px}
+    .flex{display:flex;align-items:center;gap:8px}
+    .switch{display:inline-flex;align-items:center;gap:8px}
+    .result{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
+    .copy{cursor:pointer;color:var(--accent);border:none;background:none}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}.wrap{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Epoch Converter</h1>
+        <p class="lead">Convert between epoch timestamps and human-readable dates. Supports seconds/ms/µs/ns, many date formats and timezones.</p>
+      </div>
+      <div style="margin-left:auto" class="small muted">Offline • Single file</div>
+    </header>
+
+    <div class="grid">
+      <!-- Left: Timestamp -> Date -->
+      <div class="card">
+        <h3 style="margin-top:0">Timestamp → Date</h3>
+        <label>Timestamp value</label>
+        <div class="row">
+          <input id="tsInput" type="text" placeholder="e.g. 1693440000 or 1693440000000 or 1693440000000000" />
+          <select id="tsUnit">
+            <option value="auto">Auto-detect</option>
+            <option value="s">Seconds (s)</option>
+            <option value="ms">Milliseconds (ms)</option>
+            <option value="us">Microseconds (µs)</option>
+            <option value="ns">Nanoseconds (ns)</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="convTs" class="btn">Convert →</button>
+          <button id="nowTs" class="icon">Now</button>
+          <label class="switch"><input type="checkbox" id="liveTs" /> <span class="small">Live</span></label>
+        </div>
+
+        <div id="tsOutputs" style="margin-top:12px"></div>
+      </div>
+
+      <!-- Right: Date -> Timestamp -->
+      <div class="card">
+        <h3 style="margin-top:0">Date → Timestamp</h3>
+        <label>Enter date/time (many formats accepted)</label>
+        <input id="dateInput" type="text" placeholder="e.g. 2025-08-31T12:34:56Z or Aug 31 2025 12:34:56 GMT+0100" />
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <select id="outTz">
+            <option value="utc">UTC</option>
+            <option value="local">Local</option>
+          </select>
+          <select id="outUnit">
+            <option value="s">Seconds (s)</option>
+            <option value="ms" selected>Milliseconds (ms)</option>
+            <option value="us">Microseconds (µs)</option>
+            <option value="ns">Nanoseconds (ns)</option>
+          </select>
+          <button id="convDate" class="btn">Convert →</button>
+        </div>
+
+        <div id="dateOutputs" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <h3 style="margin-top:0">Formats & Details</h3>
+        <div id="formats" class="small"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Parsing helpers</h3>
+        <p class="small muted">You can paste ISO 8601, RFC2822, human-friendly strings, or raw numeric timestamps. Auto-detection guesses by digit count. If parse fails, try adding a timezone (e.g. "Z" or "+0100").</p>
+        <table>
+          <thead><tr><th>Example input</th><th>Parsed</th></tr></thead>
+          <tbody>
+            <tr><td>1693440000</td><td class="small">Unix seconds</td></tr>
+            <tr><td>1693440000000</td><td class="small">Unix ms</td></tr>
+            <tr><td>2025-08-31T12:00:00Z</td><td class="small">ISO 8601 UTC</td></tr>
+            <tr><td>Aug 31 2025 13:00:00 GMT+0100</td><td class="small">Locale with TZ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer>Built with plain HTML/JS. Not affiliated with epochconverter.com. Copy buttons available next to results.</footer>
+  </div>
+
+  <script>
+    // Utilities
+    const $ = id => document.getElementById(id);
+    function detectUnitFromNumber(s){
+      // remove non-digits except leading - and decimal
+      const raw = s.trim();
+      if(!/^[-+]?\d+(\.\d+)?$/.test(raw)) return null;
+      const digits = raw.replace(/[^0-9]/g,'');
+      if(digits.length<=10) return 's';
+      if(digits.length<=13) return 'ms';
+      if(digits.length<=16) return 'us';
+      return 'ns';
+    }
+
+    function toMilliseconds(value, unit){
+      const n = Number(value);
+      if(!isFinite(n)) return NaN;
+      switch(unit){
+        case 's': return n*1000;
+        case 'ms': return n;
+        case 'us': return Math.floor(n/1000);
+        case 'ns': return Math.floor(n/1e6);
+        default: return n; // assume ms
+      }
+    }
+    function fromMilliseconds(ms, unit){
+      switch(unit){
+        case 's': return Math.floor(ms/1000);
+        case 'ms': return Math.floor(ms);
+        case 'us': return Math.floor(ms*1000);
+        case 'ns': return Math.floor(ms*1e6);
+      }
+    }
+
+    function formatAllDates(d, tz='utc'){
+      // d: Date object
+      const t = tz==='utc';
+      const pad=(n,ln=2)=>String(n).padStart(ln,'0');
+      const Y = t?d.getUTCFullYear():d.getFullYear();
+      const M = pad(t?d.getUTCMonth()+1:d.getMonth()+1);
+      const D = pad(t?d.getUTCDate():d.getDate());
+      const hh = pad(t?d.getUTCHours():d.getHours());
+      const mm = pad(t?d.getUTCMinutes():d.getMinutes());
+      const ss = pad(t?d.getUTCSeconds():d.getSeconds());
+      const ms = t?d.getUTCMilliseconds():d.getMilliseconds();
+      const iso = d.toISOString();
+      const rfc = d.toUTCString();
+      const locale = d.toString();
+      const localISO = (() => {
+        // local iso without timezone
+        const yy = d.getFullYear();
+        const mo = pad(d.getMonth()+1);
+        const da = pad(d.getDate());
+        const hh2 = pad(d.getHours());
+        const mi2 = pad(d.getMinutes());
+        const se2 = pad(d.getSeconds());
+        const ms2 = String(d.getMilliseconds()).padStart(3,'0');
+        return `${yy}-${mo}-${da}T${hh2}:${mi2}:${se2}.${ms2}`;
+      })();
+
+      return {
+        iso, rfc, locale, localISO,
+        date: `${Y}-${M}-${D}`,
+        time: `${hh}:${mm}:${ss}.${ms}`
+      };
+    }
+
+    function renderTsOutputs(ms){
+      const dUTC = new Date(ms);
+      const dLocal = new Date(ms);
+      const units = ['s','ms','us','ns'];
+      let html = '<div class="result">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>UTC</strong></div><div class="small">'+dUTC.toUTCString()+'</div></div>';
+      const fmtU = formatAllDates(dUTC,'utc');
+      html += `<table><tbody>`;
+      html += `<tr><td>ISO 8601 (UTC)</td><td><code id="isoUtc">${fmtU.iso}</code> <button class="copy" data-text="${fmtU.iso}">Copy</button></td></tr>`;
+      html += `<tr><td>RFC 2822</td><td>${fmtU.rfc}</td></tr>`;
+      html += `<tr><td>Human (toString)</td><td>${fmtU.locale}</td></tr>`;
+      html += `<tr><td>Date</td><td>${fmtU.date}</td></tr>`;
+      html += `<tr><td>Time</td><td>${fmtU.time}</td></tr>`;
+      html += `</tbody></table>`;
+
+      const fmtL = formatAllDates(dLocal,'local');
+      html += '<hr style="opacity:0.06">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>Local</strong></div><div class="small">'+dLocal.toString()+'</div></div>';
+      html += `<table><tbody>`;
+      html += `<tr><td>Local ISO (no TZ)</td><td>${fmtL.localISO} <button class="copy" data-text="${fmtL.localISO}">Copy</button></td></tr>`;
+      html += `<tr><td>Locale string</td><td>${fmtL.locale}</td></tr>`;
+      html += `</tbody></table>`;
+
+      html += '<hr style="opacity:0.06">';
+      html += '<div><strong>Unix timestamps</strong></div>';
+      html += '<table><tbody>';
+      units.forEach(u=>{
+        const v = fromMilliseconds(ms,u);
+        html += `<tr><td>${u}</td><td><code id="ts-${u}">${v}</code> <button class="copy" data-text="${v}">Copy</button></td></tr>`;
+      });
+      html += '</tbody></table>';
+
+      html += '</div>';
+      $('tsOutputs').innerHTML = html;
+      attachCopyListeners();
+    }
+
+    function attachCopyListeners(){
+      document.querySelectorAll('.copy').forEach(btn=>{
+        btn.onclick = ()=>{
+          const t = btn.getAttribute('data-text');
+          navigator.clipboard?.writeText(t).then(()=>{
+            btn.textContent='Copied';
+            setTimeout(()=>btn.textContent='Copy',900);
+          }).catch(()=>alert('Copy failed'));
+        };
+      });
+    }
+
+    // Convert timestamp -> date
+    function convertTimestamp(){
+      const raw = $('tsInput').value.trim();
+      if(raw.length===0) return;
+      const forced = $('tsUnit').value;
+      let unit = forced==='auto'?detectUnitFromNumber(raw):forced;
+      if(unit===null) unit='ms';
+      // allow floats
+      const n = Number(raw);
+      if(isNaN(n)){
+        alert('Invalid numeric timestamp'); return;
+      }
+      // if raw includes decimal and detected seconds, handle fractional
+      let ms;
+      if(unit==='s' && raw.includes('.')) ms = Math.floor(n*1000);
+      else ms = toMilliseconds(n, unit);
+      renderTsOutputs(ms);
+    }
+
+    // Convert date -> timestamp
+    function convertDateToTs(){
+      const raw = $('dateInput').value.trim();
+      if(raw.length===0) return;
+      // try Date.parse
+      let ms = Date.parse(raw);
+      // If parsing fails and input looks like "YYYY-MM-DD HH:MM:SS" without T, try replace space with T
+      if(isNaN(ms)){
+        const alt = raw.replace(' ','T');
+        ms = Date.parse(alt);
+      }
+      if(isNaN(ms)){
+        alert('Could not parse date. Try adding a timezone (e.g. Z or +0100) or use an ISO format.');
+        return;
+      }
+      const tz = $('outTz').value;
+      // ms is in UTC milliseconds already (Date.parse interprets timezone). If user wants local, convert by adding offset
+      let outMs = ms;
+      if(tz==='local'){
+        // convert ms (UTC) to local by adding local offset
+        const offset = new Date(ms).getTimezoneOffset()*60*1000; // minutes to ms, note getTimezoneOffset returns minutes to add to local to get UTC; so UTC = local + offset -> local = UTC - offset
+        outMs = ms - offset;
+      }
+      const unit = $('outUnit').value;
+      const v = fromMilliseconds(outMs, unit);
+      $('dateOutputs').innerHTML = `<div class="result"><div><strong>${v}</strong> <button class="copy" data-text="${v}">Copy</button></div><div class="small" style="margin-top:8px">Parsed date (UTC): ${new Date(ms).toUTCString()}</div></div>`;
+      attachCopyListeners();
+    }
+
+    // Now button
+    $('nowTs').onclick = ()=>{
+      const ms = Date.now();
+      $('tsInput').value = Math.floor(ms/1000);
+      $('tsUnit').value='s';
+      renderTsOutputs(ms);
+    };
+
+    $('convTs').onclick = convertTimestamp;
+    $('convDate').onclick = convertDateToTs;
+
+    // Live update
+    let liveInterval=null;
+    $('liveTs').addEventListener('change', e=>{
+      if(e.target.checked){
+        liveInterval = setInterval(()=>{
+          const ms = Date.now();
+          renderTsOutputs(ms);
+        }, 1000);
+      } else {
+        clearInterval(liveInterval);
+      }
+    });
+
+    // Populate formats panel
+    function populateFormats(){
+      const now = new Date();
+      const fmt = formatAllDates(now,'utc');
+      const html = `<p class="small">ISO 8601: <code>${fmt.iso}</code></p><p class="small">RFC: <code>${fmt.rfc}</code></p><p class="small">Local: <code>${fmt.locale}</code></p>`;
+      $('formats').innerHTML = html;
+    }
+    populateFormats();
+
+    // Attach Enter key bindings
+    $('tsInput').addEventListener('keydown', e=>{ if(e.key==='Enter') convertTimestamp(); });
+    $('dateInput').addEventListener('keydown', e=>{ if(e.key==='Enter') convertDateToTs(); });
+
+    // initial render
+    renderTsOutputs(Date.now());
+
+    // Extra: drag 'n' drop paste support
+    window.addEventListener('paste', (ev)=>{
+      const txt = (ev.clipboardData||window.clipboardData).getData('text');
+      if(!txt) return;
+      // if plain number -> ts input, else -> date input
+      if(/^\s*[-+]?\d+\s*$/.test(txt)){
+        $('tsInput').value = txt.trim();
+        convertTimestamp();
+      } else {
+        $('dateInput').value = txt.trim();
+        convertDateToTs();
+      }
+    });
+
+  </script>
+</body>
+</html>
+
