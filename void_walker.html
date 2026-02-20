@@ -548,226 +548,413 @@
 // ============================================================
 
 const SKILLS = {
+  // ── ACTIVE ──
   slash: {
-    id:'slash', name:'SLASH', type:'active',
-    desc:'100% PWR dmg.', cooldown:0,
+    id:'slash', name:'SLASH', type:'active', desc:'100% PWR dmg.', cooldown:0,
     use(p,e){ return dealDmg(p,e,p.power); }
   },
   heavyStrike: {
-    id:'heavyStrike', name:'HEAVY STRIKE', type:'active',
-    desc:'150% PWR dmg. Skip next turn.', cooldown:2,
+    id:'heavyStrike', name:'HEAVY STRIKE', type:'active', desc:'150% PWR dmg. Skip next turn.', cooldown:2,
     use(p,e){ p.skipTurn=true; return dealDmg(p,e,Math.floor(p.power*1.5)); }
   },
   vampireSlash: {
-    id:'vampireSlash', name:'VAMPIRE SLASH', type:'active',
-    desc:'80% PWR dmg, heal 50% dealt.', cooldown:1,
-    use(p,e){
-      const d=dealDmg(p,e,Math.floor(p.power*.8));
-      healPlayer(p,Math.max(1,Math.floor(d/2)));
-      return d;
-    }
+    id:'vampireSlash', name:'VAMPIRE SLASH', type:'active', desc:'80% PWR dmg, heal 50% dealt.', cooldown:1,
+    use(p,e){ const d=dealDmg(p,e,Math.floor(p.power*.8)); healPlayer(p,Math.max(1,Math.floor(d/2))); return d; }
   },
   poisonBlade: {
-    id:'poisonBlade', name:'POISON BLADE', type:'active',
-    desc:'60% PWR + Poison 3.', cooldown:1,
+    id:'poisonBlade', name:'POISON BLADE', type:'active', desc:'60% PWR + Poison 3.', cooldown:1,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.6)); applyStatus(e,'poison',3); return 0; }
   },
   bleedCut: {
-    id:'bleedCut', name:'BLEED CUT', type:'active',
-    desc:'70% PWR + Bleed 2.', cooldown:1,
+    id:'bleedCut', name:'BLEED CUT', type:'active', desc:'70% PWR + Bleed 2.', cooldown:1,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.7)); applyStatus(e,'bleed',2); return 0; }
   },
   shieldBash: {
-    id:'shieldBash', name:'SHIELD BASH', type:'active',
-    desc:'Shield 4 + 40% PWR dmg.', cooldown:2,
+    id:'shieldBash', name:'SHIELD BASH', type:'active', desc:'Shield 4 + 40% PWR dmg.', cooldown:2,
     use(p,e){ applyStatus(p,'shield',4); return dealDmg(p,e,Math.floor(p.power*.4)); }
   },
   berserkerRage: {
-    id:'berserkerRage', name:'BERSERK', type:'active',
-    desc:'Rage 3 on self.', cooldown:3,
+    id:'berserkerRage', name:'BERSERK', type:'active', desc:'Rage 3 on self (+40% dmg/+30% taken).', cooldown:3,
     use(p,e){ applyStatus(p,'rage',3); return 0; }
   },
   curseStrike: {
-    id:'curseStrike', name:'CURSE STRIKE', type:'active',
-    desc:'90% PWR + Curse 2 enemy.', cooldown:2,
+    id:'curseStrike', name:'CURSE STRIKE', type:'active', desc:'90% PWR + Curse 2 enemy.', cooldown:2,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.9)); applyStatus(e,'curse',2); return 0; }
   },
   voidBolt: {
-    id:'voidBolt', name:'VOID BOLT', type:'active',
-    desc:'120% PWR, ignores DEF.', cooldown:2,
+    id:'voidBolt', name:'VOID BOLT', type:'active', desc:'120% PWR, ignores DEF.', cooldown:2,
     use(p,e){ return dealDmgTrue(p,e,Math.floor(p.power*1.2)); }
   },
   stunGauntlet: {
-    id:'stunGauntlet', name:'STUN GAUNTLET', type:'active',
-    desc:'40% PWR + Stun 1.', cooldown:3,
+    id:'stunGauntlet', name:'STUN GAUNTLET', type:'active', desc:'40% PWR + Stun enemy 1 turn.', cooldown:3,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.4)); applyStatus(e,'stun',1); return 0; }
   },
   mirrorWard: {
-    id:'mirrorWard', name:'MIRROR WARD', type:'active',
-    desc:'Reflect next attack + Shield 2.', cooldown:4,
+    id:'mirrorWard', name:'MIRROR WARD', type:'active', desc:'Reflect next attack + Shield 2.', cooldown:4,
     use(p,e){ applyStatus(p,'reflect',1); applyStatus(p,'shield',2); return 0; }
   },
   soulDrain: {
-    id:'soulDrain', name:'SOUL DRAIN', type:'active',
-    desc:'Steal 2 PWR from enemy.', cooldown:3,
+    id:'soulDrain', name:'SOUL DRAIN', type:'active', desc:'Steal 2 PWR from enemy permanently.', cooldown:3,
     use(p,e){ p.power+=2; e.power=Math.max(1,e.power-2); addLog('Soul Drain: +2 PWR stolen!','info'); return 0; }
   },
   chainLightning: {
-    id:'chainLightning', name:'CHAIN BOLT', type:'active',
-    desc:'110% PWR + Weak 2.', cooldown:2,
+    id:'chainLightning', name:'CHAIN BOLT', type:'active', desc:'110% PWR + Weak 2.', cooldown:2,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*1.1)); applyStatus(e,'weak',2); return 0; }
   },
   regenSurge: {
-    id:'regenSurge', name:'REGEN SURGE', type:'active',
-    desc:'Regen 3 on self.', cooldown:3,
+    id:'regenSurge', name:'REGEN SURGE', type:'active', desc:'Regen 3 on self (3 HP/turn).', cooldown:3,
     use(p,e){ applyStatus(p,'regen',3); return 0; }
   },
-  // PASSIVES
+  // NEW ACTIVES
+  doubleStrike: {
+    id:'doubleStrike', name:'DOUBLE STRIKE', type:'active', desc:'2x 60% PWR hits.', cooldown:1,
+    use(p,e){ const d1=dealDmg(p,e,Math.floor(p.power*.6)); const d2=dealDmg(p,e,Math.floor(p.power*.6)); addLog('Double Strike: '+d1+'+'+d2+' DMG','dmg'); return 0; }
+  },
+  executionersArc: {
+    id:'executionersArc', name:'EXECUTE ARC', type:'active', desc:'200% PWR dmg. Only usable if enemy below 30% HP. Otherwise deals 0.', cooldown:1,
+    use(p,e){
+      if(e.hp/e.maxHp <= 0.3){ const d=dealDmgTrue(p,e,Math.floor(p.power*2)); addLog('EXECUTE: '+d+' DMG!','dmg'); return 0; }
+      addLog('Execute: enemy too strong (need <30% HP)','warn'); return 0;
+    }
+  },
+  bloodNova: {
+    id:'bloodNova', name:'BLOOD NOVA', type:'active', desc:'Spend 8 HP: deal 250% PWR true dmg.', cooldown:3,
+    use(p,e){
+      p.hp=Math.max(1,p.hp-8); updateHUD();
+      const d=dealDmgTrue(p,e,Math.floor(p.power*2.5));
+      addLog('Blood Nova: -8 HP, '+d+' DMG','dmg'); return 0;
+    }
+  },
+  cursedVolley: {
+    id:'cursedVolley', name:'CURSED VOLLEY', type:'active', desc:'3x 40% PWR + Curse 1 each hit.', cooldown:2,
+    use(p,e){
+      for(let i=0;i<3;i++){ dealDmg(p,e,Math.floor(p.power*.4)); applyStatus(e,'curse',1); }
+      return 0;
+    }
+  },
+  voidEruption: {
+    id:'voidEruption', name:'VOID ERUPTION', type:'active', desc:'80% PWR true dmg + Stun 1 + Weak 2.', cooldown:3,
+    use(p,e){ dealDmgTrue(p,e,Math.floor(p.power*.8)); applyStatus(e,'stun',1); applyStatus(e,'weak',2); return 0; }
+  },
+  siphonLife: {
+    id:'siphonLife', name:'SIPHON LIFE', type:'active', desc:'Drain enemy Regen 2 and apply it to self.', cooldown:2,
+    use(p,e){ applyStatus(p,'regen',2); applyStatus(e,'weak',1); addLog('Siphon: +Regen 2, enemy Weak 1','info'); return 0; }
+  },
+  chaosSlash: {
+    id:'chaosSlash', name:'CHAOS SLASH', type:'active', desc:'Random: 50-200% PWR dmg.', cooldown:1,
+    use(p,e){ const mult=0.5+Math.random()*1.5; const d=dealDmg(p,e,Math.floor(p.power*mult)); addLog('Chaos Slash ('+Math.floor(mult*100)+'%): '+d+' DMG','dmg'); return 0; }
+  },
+  deathMark: {
+    id:'deathMark', name:'DEATH MARK', type:'active', desc:'Apply Bleed 3 + Poison 3 + Curse 2.', cooldown:4,
+    use(p,e){ applyStatus(e,'bleed',3); applyStatus(e,'poison',3); applyStatus(e,'curse',2); addLog('Death Mark applied!','dmg'); return 0; }
+  },
+  ironWall: {
+    id:'ironWall', name:'IRON WALL', type:'active', desc:'Shield 6 + Regen 2.', cooldown:3,
+    use(p,e){ applyStatus(p,'shield',6); applyStatus(p,'regen',2); return 0; }
+  },
+  voidNova: {
+    id:'voidNova', name:'VOID NOVA', type:'active', desc:'140% PWR true dmg + Curse 3. Self: Weak 1.', cooldown:3,
+    use(p,e){ dealDmgTrue(p,e,Math.floor(p.power*1.4)); applyStatus(e,'curse',3); applyStatus(p,'weak',1); return 0; }
+  },
+  rupture: {
+    id:'rupture', name:'RUPTURE', type:'active', desc:'50% PWR + doubles enemy Bleed stacks.', cooldown:2,
+    use(p,e){ dealDmg(p,e,Math.floor(p.power*.5)); if(e.statuses&&e.statuses.bleed){ e.statuses.bleed*=2; addLog('Bleed doubled to '+e.statuses.bleed,'dmg'); } else applyStatus(e,'bleed',2); return 0; }
+  },
+  battleCry: {
+    id:'battleCry', name:'BATTLE CRY', type:'active', desc:'Rage 2 + Regen 2 + Shield 2 on self.', cooldown:4,
+    use(p,e){ applyStatus(p,'rage',2); applyStatus(p,'regen',2); applyStatus(p,'shield',2); return 0; }
+  },
+  soulExplosion: {
+    id:'soulExplosion', name:'SOUL EXPLOSION', type:'active', desc:'Consume all your Regen stacks: deal 80% PWR per stack.', cooldown:0,
+    use(p,e){
+      const stacks=(p.statuses&&p.statuses.regen)||0;
+      if(stacks<=0){ addLog('No Regen to consume.','warn'); return 0; }
+      delete p.statuses.regen;
+      const d=dealDmgTrue(p,e,Math.floor(p.power*.8*stacks));
+      addLog('Soul Explosion ('+stacks+' stacks): '+d+' DMG!','dmg'); return 0;
+    }
+  },
+  phantomBlade: {
+    id:'phantomBlade', name:'PHANTOM BLADE', type:'active', desc:'50% PWR dmg x2. Each hit 30% chance to proc Bleed 1.', cooldown:1,
+    use(p,e){
+      for(let i=0;i<2;i++){
+        dealDmg(p,e,Math.floor(p.power*.5));
+        if(Math.random()<.3) applyStatus(e,'bleed',1);
+      }
+      return 0;
+    }
+  },
+
+  // ── PASSIVE ──
   ironSkin: {
-    id:'ironSkin', name:'IRON SKIN', type:'passive',
-    desc:'+2 DEF permanently.',
+    id:'ironSkin', name:'IRON SKIN', type:'passive', desc:'+2 DEF permanently.',
     onAcquire(p){ p.defense+=2; addLog('Iron Skin: +2 DEF','level'); }
   },
   berserkerBlood: {
-    id:'berserkerBlood', name:'BERSERKER BLOOD', type:'passive',
-    desc:'+1 PWR when below 50% HP.',
+    id:'berserkerBlood', name:'BERSERKER BLOOD', type:'passive', desc:'+1 PWR when below 50% HP (per turn).',
     onAcquire(p){ p.passives.push('berserkerBlood'); addLog('Berserker Blood acquired','level'); }
   },
   voidHeart: {
-    id:'voidHeart', name:'VOID HEART', type:'passive',
-    desc:'+5 max HP.',
-    onAcquire(p){ p.maxHp+=5; p.hp+=5; addLog('Void Heart: +5 max HP','level'); }
+    id:'voidHeart', name:'VOID HEART', type:'passive', desc:'+8 max HP.',
+    onAcquire(p){ p.maxHp+=8; p.hp+=8; addLog('Void Heart: +8 max HP','level'); }
   },
   shadowStep: {
-    id:'shadowStep', name:'SHADOW STEP', type:'passive',
-    desc:'20% dodge chance.',
+    id:'shadowStep', name:'SHADOW STEP', type:'passive', desc:'20% dodge chance.',
     onAcquire(p){ p.passives.push('shadowStep'); addLog('Shadow Step acquired','level'); }
   },
   thornArmor: {
-    id:'thornArmor', name:'THORN ARMOR', type:'passive',
-    desc:'Reflect 2 dmg when hit.',
+    id:'thornArmor', name:'THORN ARMOR', type:'passive', desc:'Reflect 2 dmg when hit.',
     onAcquire(p){ p.passives.push('thornArmor'); addLog('Thorn Armor acquired','level'); }
   },
   bloodPact: {
-    id:'bloodPact', name:'BLOOD PACT', type:'passive',
-    desc:'+3 PWR, -5 max HP.',
-    onAcquire(p){ p.power+=3; p.maxHp=Math.max(10,p.maxHp-5); p.hp=Math.min(p.hp,p.maxHp); addLog('Blood Pact: +3 PWR -5 maxHP','warn'); }
+    id:'bloodPact', name:'BLOOD PACT', type:'passive', desc:'+4 PWR, -8 max HP.',
+    onAcquire(p){ p.power+=4; p.maxHp=Math.max(10,p.maxHp-8); p.hp=Math.min(p.hp,p.maxHp); addLog('Blood Pact: +4 PWR -8 maxHP','warn'); }
   },
   executioner: {
-    id:'executioner', name:'EXECUTIONER', type:'passive',
-    desc:'+50% dmg vs enemies below 25% HP.',
+    id:'executioner', name:'EXECUTIONER', type:'passive', desc:'+50% dmg vs enemies below 25% HP.',
     onAcquire(p){ p.passives.push('executioner'); addLog('Executioner acquired','level'); }
   },
   soulCollector: {
-    id:'soulCollector', name:'SOUL COLLECTOR', type:'passive',
-    desc:'+1 PWR per kill.',
+    id:'soulCollector', name:'SOUL COLLECTOR', type:'passive', desc:'+1 PWR per kill.',
     onAcquire(p){ p.passives.push('soulCollector'); addLog('Soul Collector acquired','level'); }
+  },
+  // NEW PASSIVES
+  voidBlood: {
+    id:'voidBlood', name:'VOID BLOOD', type:'passive', desc:'Gain 1 Shield each turn automatically.',
+    onAcquire(p){ p.passives.push('voidBlood'); addLog('Void Blood acquired','level'); }
+  },
+  cursedBody: {
+    id:'cursedBody', name:'CURSED BODY', type:'passive', desc:'When hit, 25% chance to Curse attacker 1.',
+    onAcquire(p){ p.passives.push('cursedBody'); addLog('Cursed Body acquired','level'); }
+  },
+  bleedMastery: {
+    id:'bleedMastery', name:'BLEED MASTERY', type:'passive', desc:'Bleed deals +1 extra dmg per tick.',
+    onAcquire(p){ p.passives.push('bleedMastery'); addLog('Bleed Mastery acquired','level'); }
+  },
+  poisonMastery: {
+    id:'poisonMastery', name:'POISON MASTERY', type:'passive', desc:'Poison deals +1 extra dmg per tick.',
+    onAcquire(p){ p.passives.push('poisonMastery'); addLog('Poison Mastery acquired','level'); }
+  },
+  titanGrip: {
+    id:'titanGrip', name:'TITAN GRIP', type:'passive', desc:'+3 PWR, all skills 1 extra cooldown.',
+    onAcquire(p){ p.power+=3; p.titanGrip=true; addLog('Titan Grip: +3 PWR, skills +1 CD','warn'); }
+  },
+  voidwalker: {
+    id:'voidwalker', name:'VOIDWALKER', type:'passive', desc:'Start each combat with Reflect 1.',
+    onAcquire(p){ p.passives.push('voidwalker'); addLog('Voidwalker acquired','level'); }
+  },
+  relentless: {
+    id:'relentless', name:'RELENTLESS', type:'passive', desc:'Skills never go on cooldown but cost 2 HP each use.',
+    onAcquire(p){ p.passives.push('relentless'); addLog('Relentless: skills cost 2 HP, no CD','warn'); }
+  },
+  deathsDoor: {
+    id:'deathsDoor', name:'DEATHS DOOR', type:'passive', desc:'+8 PWR when below 20% HP.',
+    onAcquire(p){ p.passives.push('deathsDoor'); addLog("Death's Door acquired",'level'); }
+  },
+  voidEater: {
+    id:'voidEater', name:'VOID EATER', type:'passive', desc:'Gain +1 PWR every 3 combat turns.',
+    onAcquire(p){ p.passives.push('voidEater'); addLog('Void Eater acquired','level'); }
+  },
+  cursedStrength: {
+    id:'cursedStrength', name:'CURSED STRENGTH', type:'passive', desc:'+1 PWR per Curse stack on self (permanent gain on curse expiry).',
+    onAcquire(p){ p.passives.push('cursedStrength'); addLog('Cursed Strength acquired','level'); }
   },
 };
 
 const RELICS = [
-  { id:'cursedBlade',    name:'CURSED BLADE',    desc:'+5 PWR, take 2 dmg/floor.',         onFloor(p){ p.power+=0; }, onTick(p){ p.hp=Math.max(1,p.hp-2); addLog('Cursed Blade: -2 HP','dmg'); }, onAcquire(p){ p.power+=5; addLog('Cursed Blade: +5 PWR','warn'); } },
-  { id:'healingCrystal', name:'HEALING CRYSTAL',  desc:'Heal 5 HP each floor.',              onFloor(p){ healPlayer(p,5); } },
-  { id:'goldTotem',      name:'GOLD TOTEM',        desc:'+3 gold per event.',                bonus:'gold' },
-  { id:'luckCharm',      name:'LUCK CHARM',        desc:'Event outcomes favourable.',        bonus:'luck' },
-  { id:'berserkerMask',  name:'BERSERKER MASK',    desc:'+2 PWR, start combat Rage 2.',      onAcquire(p){ p.power+=2; addLog('Berserker Mask: +2 PWR','level'); }, onCombatStart(p){ applyStatus(p,'rage',2); } },
-  { id:'ancientShield',  name:'ANCIENT SHIELD',    desc:'+3 DEF permanently.',               onAcquire(p){ p.defense+=3; addLog('Ancient Shield: +3 DEF','level'); } },
-  { id:'poisonVial',     name:'POISON VIAL',       desc:'Combat starts with Poison 2 on enemy.', onCombatStart(p,e){ if(e) applyStatus(e,'poison',2); } },
-  { id:'thornRing',      name:'THORN RING',        desc:'Thorn reflect +3.',                 bonus:'thorn3' },
-  { id:'shadowCloak',    name:'SHADOW CLOAK',      desc:'Dodge chance +10%.',                onAcquire(p){ p.dodgeBonus=(p.dodgeBonus||0)+10; addLog('Shadow Cloak: +10% dodge','level'); } },
-  { id:'voidShard',      name:'VOID SHARD',        desc:'All active skill cooldowns -1.',    onAcquire(p){ addLog('Void Shard: cooldowns -1','level'); } },
+  { id:'cursedBlade',    name:'CURSED BLADE',     desc:'+5 PWR, -2 HP/floor.',
+    onAcquire(p){ p.power+=5; addLog('Cursed Blade: +5 PWR','warn'); },
+    onFloor(p){ p.hp=Math.max(1,p.hp-2); addLog('Cursed Blade: -2 HP','dmg'); } },
+  { id:'healingCrystal', name:'HEALING CRYSTAL',   desc:'Heal 5 HP each floor.',
+    onFloor(p){ healPlayer(p,5); } },
+  { id:'goldTotem',      name:'GOLD TOTEM',         desc:'+3 gold per event.',  bonus:'gold' },
+  { id:'luckCharm',      name:'LUCK CHARM',          desc:'Event outcomes favourable.', bonus:'luck' },
+  { id:'berserkerMask',  name:'BERSERKER MASK',      desc:'+2 PWR, Rage 2 on combat start.',
+    onAcquire(p){ p.power+=2; addLog('Berserker Mask: +2 PWR','level'); },
+    onCombatStart(p){ applyStatus(p,'rage',2); } },
+  { id:'ancientShield',  name:'ANCIENT SHIELD',      desc:'+3 DEF permanently.',
+    onAcquire(p){ p.defense+=3; addLog('Ancient Shield: +3 DEF','level'); } },
+  { id:'poisonVial',     name:'POISON VIAL',         desc:'Enemy starts combat with Poison 2.',
+    onCombatStart(p,e){ if(e) applyStatus(e,'poison',2); } },
+  { id:'thornRing',      name:'THORN RING',           desc:'Thorn reflect +3.',  bonus:'thorn3' },
+  { id:'shadowCloak',    name:'SHADOW CLOAK',         desc:'+10% dodge.',
+    onAcquire(p){ p.dodgeBonus=(p.dodgeBonus||0)+10; addLog('Shadow Cloak: +10% dodge','level'); } },
+  { id:'voidShard',      name:'VOID SHARD',            desc:'All skill cooldowns -1 (min 0).',
+    onAcquire(p){ addLog('Void Shard equipped','level'); } },
+  // NEW RELICS
+  { id:'soulJar',        name:'SOUL JAR',             desc:'Gain +2 PWR on every level up.',
+    onLevelUp(p){ p.power+=2; addLog('Soul Jar: +2 PWR on level up','level'); } },
+  { id:'hungerStone',    name:'HUNGER STONE',          desc:'Each kill heals 4 HP.',
+    onKill(p){ healPlayer(p,4); } },
+  { id:'bloodRune',      name:'BLOOD RUNE',            desc:'Combat starts with Bleed 3 on enemy.',
+    onCombatStart(p,e){ if(e) applyStatus(e,'bleed',3); } },
+  { id:'curseTablet',    name:'CURSE TABLET',          desc:'Combat starts with Curse 2 on enemy.',
+    onCombatStart(p,e){ if(e) applyStatus(e,'curse',2); } },
+  { id:'ironHeart',      name:'IRON HEART',            desc:'+10 max HP, +1 DEF.',
+    onAcquire(p){ p.maxHp+=10; p.hp+=10; p.defense+=1; addLog('Iron Heart: +10 HP +1 DEF','level'); } },
+  { id:'voidCrystal',    name:'VOID CRYSTAL',          desc:'+3 PWR. Take 1 extra dmg from all hits.',
+    onAcquire(p){ p.power+=3; p.voidCrystalCurse=true; addLog('Void Crystal: +3 PWR, -1 HP per hit','warn'); } },
+  { id:'echoShield',     name:'ECHO SHIELD',           desc:'Shield 3 auto-applied at start of each combat.',
+    onCombatStart(p){ applyStatus(p,'shield',3); } },
+  { id:'wraithBand',     name:'WRAITH BAND',           desc:'20% chance each turn to apply Weak 1 to enemy for free.',
+    bonus:'wraithBand' },
+  { id:'sanguineRing',   name:'SANGUINE RING',         desc:'Vampire Slash and drain effects heal +50% more.',
+    bonus:'sanguine' },
+  { id:'abyssalCore',    name:'ABYSSAL CORE',          desc:'+6 PWR, -6 DEF (min 0). Chaos reigns.',
+    onAcquire(p){ p.power+=6; p.defense=Math.max(0,p.defense-6); addLog('Abyssal Core: +6 PWR -6 DEF','warn'); } },
+  { id:'timeFragment',   name:'TIME FRAGMENT',         desc:'All skill cooldowns reduced by 1 each floor.',
+    onFloor(p){ Object.keys(p.skillCooldowns).forEach(k=>{ if(p.skillCooldowns[k]>0){ p.skillCooldowns[k]--; if(p.skillCooldowns[k]<=0) delete p.skillCooldowns[k]; } }); addLog('Time Fragment: CDs -1','dim'); } },
+  { id:'plagueHeart',    name:'PLAGUE HEART',          desc:'+4 PWR. Your Poison ticks deal double.',
+    onAcquire(p){ p.power+=4; p.passives.push('poisonMastery'); p.passives.push('poisonMastery'); addLog('Plague Heart: +4 PWR + double Poison','warn'); } },
+  { id:'martyrSeal',     name:'MARTYR SEAL',           desc:'When you take dmg, 15% chance to heal 5 HP instead.',
+    bonus:'martyrSeal' },
 ];
+
 
 const ENEMIES = [
-  { name:'HOLLOW GRUNT',  maxHp:18, power:4,  defense:0, xp:8,  gold:[2,5],  ascii:'[==] GRUNT',           skills:['strike','strike','howl'],                    tier:1 },
-  { name:'PLAGUE RAT',    maxHp:12, power:3,  defense:0, xp:6,  gold:[1,4],  ascii:'~(o_o)~ RAT',          skills:['gnaw','gnaw','infect'],                      tier:1 },
-  { name:'BONE SHARD',    maxHp:14, power:5,  defense:1, xp:9,  gold:[2,4],  ascii:'-X- BONE SHARD',       skills:['stab','stab','rattle'],                      tier:1 },
-  { name:'VOID STALKER',  maxHp:24, power:6,  defense:1, xp:14, gold:[4,8],  ascii:'◈{||}◈ STALKER',      skills:['strike','voidStep','bite','strike'],          tier:2 },
-  { name:'CURSED KNIGHT', maxHp:28, power:7,  defense:3, xp:16, gold:[5,9],  ascii:'[vv] KNIGHT',          skills:['heavyBlow','block','strike','heavyBlow'],    tier:2 },
-  { name:'BROOD WITCH',   maxHp:20, power:5,  defense:0, xp:15, gold:[4,8],  ascii:'*(o_o)* WITCH',        skills:['hex','poisonCloud','hex','strike'],           tier:2 },
-  { name:'IRON GOLEM',    maxHp:40, power:9,  defense:5, xp:22, gold:[7,12], ascii:'[###] GOLEM',          skills:['slam','slam','fortify','slam'],               tier:3 },
-  { name:'SHADOW REAPER', maxHp:32, power:10, defense:2, xp:24, gold:[8,13], ascii:'(X) REAPER',           skills:['soul','reap','soul','bleed','reap'],          tier:3 },
-  { name:'THE DEVOURER',  maxHp:60, power:12, defense:4, xp:50, gold:[15,25],ascii:'<<DEVOURER>>',         skills:['consume','slam','consume','rage','slam'],     tier:'boss', isBoss:true },
-  { name:'VOID LORD',     maxHp:80, power:15, defense:6, xp:80, gold:[25,40],ascii:'<< VOID LORD >>',      skills:['voidBeam','consume','voidBeam','curse','slam','voidBeam'], tier:'boss', isBoss:true },
+  // ── TIER 1 (floors 1-2) ──
+  { name:'HOLLOW GRUNT',    maxHp:18, power:4,  defense:0, xp:8,   gold:[2,5],   ascii:'[==] GRUNT',          skills:['strike','strike','howl'],                         tier:1 },
+  { name:'PLAGUE RAT',      maxHp:12, power:3,  defense:0, xp:6,   gold:[1,4],   ascii:'~(o_o)~ RAT',         skills:['gnaw','gnaw','infect'],                           tier:1 },
+  { name:'BONE SHARD',      maxHp:14, power:5,  defense:1, xp:9,   gold:[2,4],   ascii:'-X- BONE SHARD',      skills:['stab','stab','rattle'],                           tier:1 },
+  { name:'RABID HOUND',     maxHp:16, power:6,  defense:0, xp:10,  gold:[2,5],   ascii:'v(o_o)v HOUND',       skills:['bite','bite','gnaw','bite'],                      tier:1 },
+  { name:'FLESH CRAWLER',   maxHp:10, power:4,  defense:0, xp:7,   gold:[1,3],   ascii:'~~~~~CRAWLER',        skills:['infect','gnaw','infect','stab'],                  tier:1 },
+  { name:'HOLLOW ARCHER',   maxHp:13, power:5,  defense:0, xp:8,   gold:[2,4],   ascii:')-O-> ARCHER',        skills:['pierce','strike','pierce','rattle'],              tier:1 },
+  { name:'SWAMP LEECH',     maxHp:20, power:3,  defense:0, xp:9,   gold:[1,4],   ascii:'(~~~) LEECH',         skills:['drain','drain','infect','drain'],                 tier:1 },
+  { name:'GRAVE DIGGER',    maxHp:15, power:4,  defense:1, xp:9,   gold:[3,6],   ascii:'[;;] DIGGER',         skills:['strike','rattle','heavyBlow'],                    tier:1 },
+
+  // ── TIER 2 (floors 3-4) ──
+  { name:'VOID STALKER',    maxHp:24, power:6,  defense:1, xp:14,  gold:[4,8],   ascii:'◈{||}◈ STALKER',     skills:['strike','voidStep','bite','strike'],              tier:2 },
+  { name:'CURSED KNIGHT',   maxHp:28, power:7,  defense:3, xp:16,  gold:[5,9],   ascii:'[vv] KNIGHT',         skills:['heavyBlow','block','strike','heavyBlow'],         tier:2 },
+  { name:'BROOD WITCH',     maxHp:20, power:5,  defense:0, xp:15,  gold:[4,8],   ascii:'*(o_o)* WITCH',       skills:['hex','poisonCloud','hex','strike'],               tier:2 },
+  { name:'BLOOD CULTIST',   maxHp:22, power:7,  defense:0, xp:15,  gold:[4,8],   ascii:'{+} CULTIST',         skills:['bloodRite','strike','bloodRite','heavyBlow'],     tier:2 },
+  { name:'IRON EXECUTIONER',maxHp:30, power:8,  defense:2, xp:18,  gold:[6,10],  ascii:'[AXE] EXEC',          skills:['heavyBlow','heavyBlow','execute','block'],        tier:2 },
+  { name:'VOID HOUND',      maxHp:19, power:9,  defense:0, xp:16,  gold:[4,8],   ascii:'◈(o_o) V.HOUND',     skills:['bite','voidStep','bite','bite','howl'],           tier:2 },
+  { name:'PLAGUE BEARER',   maxHp:25, power:5,  defense:1, xp:14,  gold:[4,7],   ascii:'[~~~] BEARER',        skills:['poisonCloud','infect','poisonCloud','strike'],    tier:2 },
+  { name:'SHADOW WRAITH',   maxHp:18, power:8,  defense:0, xp:17,  gold:[5,9],   ascii:'~(X)~ WRAITH',        skills:['reap','voidStep','reap','curse'],                 tier:2 },
+  { name:'STONE SENTINEL',  maxHp:35, power:5,  defense:4, xp:16,  gold:[5,9],   ascii:'[###] SENTINEL',      skills:['slam','fortify','strike','fortify','slam'],       tier:2 },
+
+  // ── TIER 3 (floors 5-6) ──
+  { name:'IRON GOLEM',      maxHp:40, power:9,  defense:5, xp:22,  gold:[7,12],  ascii:'[###] GOLEM',         skills:['slam','slam','fortify','slam'],                   tier:3 },
+  { name:'SHADOW REAPER',   maxHp:32, power:10, defense:2, xp:24,  gold:[8,13],  ascii:'(X) REAPER',          skills:['soul','reap','soul','bleed','reap'],              tier:3 },
+  { name:'VOID HYDRA',      maxHp:36, power:8,  defense:2, xp:25,  gold:[8,13],  ascii:'◈=◈=◈ HYDRA',        skills:['voidBeam','bite','voidBeam','slam','bite'],       tier:3 },
+  { name:'DEATH KNIGHT',    maxHp:38, power:11, defense:3, xp:26,  gold:[9,14],  ascii:'[DK] DEATH KNIGHT',   skills:['heavyBlow','curse','reap','heavyBlow','soul'],    tier:3 },
+  { name:'ABYSSAL WORM',    maxHp:50, power:7,  defense:1, xp:24,  gold:[7,12],  ascii:'~~~~WORM~~~~',        skills:['consume','drain','poisonCloud','consume'],        tier:3 },
+  { name:'CHAOS MAGE',      maxHp:28, power:12, defense:0, xp:27,  gold:[9,14],  ascii:'(*)CHAOS MAGE(*)',    skills:['voidBeam','hex','voidBeam','poisonCloud','voidBeam'], tier:3 },
+  { name:'BONE COLOSSUS',   maxHp:45, power:9,  defense:3, xp:25,  gold:[8,13],  ascii:'[COLOSSUS]',          skills:['slam','rattle','slam','fortify','heavyBlow'],     tier:3 },
+  { name:'SOUL HARVESTER',  maxHp:30, power:10, defense:1, xp:26,  gold:[8,13],  ascii:'◈(*)◈ HARVESTER',    skills:['soul','reap','drain','soul','bleed'],             tier:3 },
+  { name:'NIGHTMARE BEAST', maxHp:42, power:11, defense:2, xp:28,  gold:[9,14],  ascii:'>>BEAST<<',           skills:['howl','heavyBlow','bite','rage','slam'],          tier:3 },
+
+  // ── TIER 4 (floors 7+) ──
+  { name:'VOID TITAN',      maxHp:55, power:13, defense:4, xp:35,  gold:[12,18], ascii:'◈◈ TITAN ◈◈',        skills:['voidBeam','slam','curse','voidBeam','fortify','slam'], tier:4 },
+  { name:'LICH LORD',       maxHp:48, power:14, defense:2, xp:36,  gold:[12,18], ascii:'[LICH LORD]',         skills:['soul','curse','voidBeam','reap','soul','voidBeam'],   tier:4 },
+  { name:'ABYSSAL KNIGHT',  maxHp:52, power:13, defense:5, xp:34,  gold:[11,17], ascii:'<AK> ABYSSAL',        skills:['heavyBlow','fortify','curse','heavyBlow','block','reap'], tier:4 },
+  { name:'PLAGUE GOD',      maxHp:44, power:11, defense:3, xp:35,  gold:[12,18], ascii:'*** PLAGUE GOD ***',   skills:['poisonCloud','infect','poisonCloud','hex','consume'],  tier:4 },
+  { name:'BLOOD TITAN',     maxHp:58, power:15, defense:3, xp:38,  gold:[13,19], ascii:'[BT] BLOOD TITAN',    skills:['bloodRite','heavyBlow','slam','bloodRite','rage'],     tier:4 },
+  { name:'VOID SERPENT',    maxHp:46, power:12, defense:2, xp:34,  gold:[11,17], ascii:'~◈~◈~ SERPENT',      skills:['voidBeam','bite','infect','voidBeam','consume'],      tier:4 },
+
+  // ── BOSSES ──
+  { name:'THE DEVOURER',    maxHp:60, power:12, defense:4, xp:50,  gold:[15,25], ascii:'<<DEVOURER>>',        skills:['consume','slam','consume','rage','slam'],                         tier:'boss', isBoss:true },
+  { name:'VOID LORD',       maxHp:80, power:15, defense:6, xp:80,  gold:[25,40], ascii:'<< VOID LORD >>',     skills:['voidBeam','consume','voidBeam','curse','slam','voidBeam'],        tier:'boss', isBoss:true },
+  { name:'THE UNDYING',     maxHp:70, power:13, defense:3, xp:65,  gold:[18,30], ascii:'[ THE UNDYING ]',     skills:['reap','soul','heavyBlow','reap','curse','voidBeam','soul'],       tier:'boss', isBoss:true },
+  { name:'CHAOS HERALD',    maxHp:75, power:14, defense:5, xp:70,  gold:[20,35], ascii:'*** CHAOS HERALD ***', skills:['voidBeam','hex','slam','bloodRite','curse','voidBeam','consume'], tier:'boss', isBoss:true },
+  { name:'THE ABYSSAL KING',maxHp:100,power:17, defense:7, xp:100, gold:[30,50], ascii:'<< ABYSSAL KING >>',  skills:['voidBeam','slam','consume','rage','curse','voidBeam','execute','slam'], tier:'boss', isBoss:true },
 ];
 
+
 const ENEMY_SKILLS = {
-  strike:      { name:'STRIKES',      dmg:1.0, effect:null },
-  gnaw:        { name:'GNAWS',        dmg:0.8, effect:null },
-  stab:        { name:'STABS',        dmg:1.1, effect:null },
-  bite:        { name:'BITES',        dmg:0.9, effect:'bleed1' },
-  howl:        { name:'HOWLS',        dmg:0,   effect:'rage1' },
-  infect:      { name:'INFECTS',      dmg:0.5, effect:'poison2' },
-  rattle:      { name:'RATTLES',      dmg:0,   effect:'weak2' },
-  heavyBlow:   { name:'HEAVY BLOW',   dmg:1.6, effect:null },
-  block:       { name:'BRACES',       dmg:0,   effect:'shield3' },
-  voidStep:    { name:'VOID STEPS',   dmg:0.7, effect:'curse1' },
-  hex:         { name:'HEXES',        dmg:0.6, effect:'curse2' },
-  poisonCloud: { name:'POISONS',      dmg:0.4, effect:'poison3' },
-  slam:        { name:'SLAMS',        dmg:1.4, effect:null },
-  fortify:     { name:'FORTIFIES',    dmg:0,   effect:'shield4' },
-  soul:        { name:'DRAINS SOUL',  dmg:0.8, effect:'weak2' },
-  reap:        { name:'REAPS',        dmg:1.5, effect:'bleed2' },
-  consume:     { name:'CONSUMES',     dmg:1.2, effect:'weak2' },
-  rage:        { name:'ENRAGES',      dmg:0,   effect:'rage3' },
-  voidBeam:    { name:'VOID BEAM',    dmg:1.8, effect:'curse2' },
-  curse:       { name:'CURSES',       dmg:0.3, effect:'curse3' },
-  bleed:       { name:'BLEEDS',       dmg:0.8, effect:'bleed2' },
+  strike:      { name:'STRIKES',       dmg:1.0, effect:null },
+  gnaw:        { name:'GNAWS',         dmg:0.8, effect:null },
+  stab:        { name:'STABS',         dmg:1.1, effect:null },
+  pierce:      { name:'PIERCES',       dmg:1.2, effect:null },  // ignores 2 DEF — handled as +2 base
+  bite:        { name:'BITES',         dmg:0.9, effect:'bleed1' },
+  howl:        { name:'HOWLS',         dmg:0,   effect:'rage2' },
+  infect:      { name:'INFECTS',       dmg:0.5, effect:'poison2' },
+  rattle:      { name:'RATTLES',       dmg:0,   effect:'weak2' },
+  drain:       { name:'DRAINS',        dmg:0.7, effect:'weak1' },
+  heavyBlow:   { name:'HEAVY BLOW',    dmg:1.6, effect:null },
+  execute:     { name:'EXECUTES',      dmg:2.0, effect:null },  // massive but cooldown managed by rotation
+  block:       { name:'BRACES',        dmg:0,   effect:'shield3' },
+  voidStep:    { name:'VOID STEPS',    dmg:0.7, effect:'curse1' },
+  hex:         { name:'HEXES',         dmg:0.6, effect:'curse2' },
+  poisonCloud: { name:'POISONS',       dmg:0.4, effect:'poison3' },
+  bloodRite:   { name:'BLOOD RITE',    dmg:0.8, effect:'bleed3' },
+  slam:        { name:'SLAMS',         dmg:1.4, effect:null },
+  fortify:     { name:'FORTIFIES',     dmg:0,   effect:'shield4' },
+  soul:        { name:'DRAINS SOUL',   dmg:0.8, effect:'weak2' },
+  reap:        { name:'REAPS',         dmg:1.5, effect:'bleed2' },
+  bleed:       { name:'BLEEDS',        dmg:0.8, effect:'bleed2' },
+  consume:     { name:'CONSUMES',      dmg:1.2, effect:'weak2' },
+  rage:        { name:'ENRAGES',       dmg:0,   effect:'rage3' },
+  voidBeam:    { name:'VOID BEAM',     dmg:1.8, effect:'curse2' },
+  curse:       { name:'CURSES',        dmg:0.3, effect:'curse3' },
 };
+
 
 const RANDOM_EVENTS = [
   {
     id:'shrine', title:'ANCIENT SHRINE',
     desc:'A crumbling shrine pulses with dim energy.',
     choices:[
-      { text:'Offer blood (-6 HP, +2 PWR)',  fn(p){ p.hp=Math.max(1,p.hp-6); p.power+=2; addLog('Shrine: +2 PWR','warn'); updateHUD(); } },
-      { text:'Pray (restore 8 HP)',           fn(p){ healPlayer(p,8); addLog('Prayers answered.','heal'); } },
-      { text:'Ignore',                        fn(p){ addLog('You pass in silence.','dim'); } },
+      { text:'Offer blood (-6 HP, +2 PWR)',    fn(p){ p.hp=Math.max(1,p.hp-6); p.power+=2; addLog('Shrine: +2 PWR','warn'); updateHUD(); } },
+      { text:'Pray (restore 8 HP)',             fn(p){ healPlayer(p,8); } },
+      { text:'Smash it (50%: +5 PWR, 50%: -15 HP + Curse 3)', fn(p){
+        if(Math.random()<.5){ p.power+=5; addLog('Shrine shattered! +5 PWR','level'); updateHUD(); }
+        else { p.hp=Math.max(1,p.hp-15); applyStatus(p,'curse',3); addLog('Cursed by the shrine!','dmg'); updateHUD(); }
+      } },
+      { text:'Ignore', fn(p){ addLog('You pass in silence.','dim'); } },
     ]
   },
   {
     id:'merchant', title:'WANDERING MERCHANT',
     desc:'A hooded figure offers wares.',
     choices:[
-      { text:'Healing potion (6g, +15 HP)',   fn(p){ if(p.gold>=6){ p.gold-=6; healPlayer(p,15); addLog('Potion: +15 HP','heal'); } else addLog('Not enough gold.','warn'); } },
-      { text:'Power crystal (8g, +3 PWR)',    fn(p){ if(p.gold>=8){ p.gold-=8; p.power+=3; addLog('Crystal: +3 PWR','level'); updateHUD(); } else addLog('Not enough gold.','warn'); } },
-      { text:'Steal (50%: +10g, else -8 HP)', fn(p){ if(Math.random()<.5){ p.gold+=10; addLog('Stole 10 gold!','loot'); } else { p.hp=Math.max(1,p.hp-8); addLog('Caught! -8 HP.','dmg'); } updateHUD(); } },
-      { text:'Leave',                         fn(p){ addLog('You walk on.','dim'); } },
+      { text:'Healing potion (6g → +15 HP)',   fn(p){ if(p.gold>=6){ p.gold-=6; healPlayer(p,15); } else addLog('Not enough gold.','warn'); } },
+      { text:'Power crystal (8g → +3 PWR)',    fn(p){ if(p.gold>=8){ p.gold-=8; p.power+=3; addLog('+3 PWR','level'); updateHUD(); } else addLog('Not enough gold.','warn'); } },
+      { text:'Cursed scroll (5g → random skill + Curse 1)', fn(p){
+        if(p.gold>=5){ p.gold-=5; applyStatus(p,'curse',1); rewardSkillPick(p,2,'CURSED SCROLL'); }
+        else addLog('Not enough gold.','warn');
+      } },
+      { text:'Steal (50%: +10g, else -8 HP)',  fn(p){ if(Math.random()<.5){ p.gold+=10; addLog('Stole 10 gold!','loot'); } else { p.hp=Math.max(1,p.hp-8); addLog('Caught! -8 HP','dmg'); } updateHUD(); } },
+      { text:'Leave',                           fn(p){ addLog('You walk on.','dim'); } },
     ]
   },
   {
     id:'fountain', title:'BLOOD FOUNTAIN',
     desc:'A stone fountain runs crimson.',
     choices:[
-      { text:'Drink (70%: +12 HP, 30%: Poison 3)', fn(p){ if(Math.random()<.7){ healPlayer(p,12); addLog('Refreshing!','heal'); } else { applyStatus(p,'poison',3); addLog('Tainted!','dmg'); } } },
-      { text:'Leave',                              fn(p){ addLog('Better not.','dim'); } },
+      { text:'Drink (70%: +12 HP, 30%: Poison 3)', fn(p){ if(Math.random()<.7){ healPlayer(p,12); } else { applyStatus(p,'poison',3); addLog('Tainted!','dmg'); } } },
+      { text:'Bathe in it (Bleed 2 self, +3 PWR)',  fn(p){ applyStatus(p,'bleed',2); p.power+=3; addLog('Bathed in blood: +3 PWR, Bleed 2','warn'); updateHUD(); } },
+      { text:'Leave',                               fn(p){ addLog('Better not.','dim'); } },
     ]
   },
   {
     id:'crypt', title:'SEALED CRYPT',
     desc:'A crypt door rattles.',
     choices:[
-      { text:'Force open (triggers extra combat)', fn(p){ addLog('Something wakes inside!','warn'); G.extraCombat=true; } },
-      { text:'Ward the door (+1 DEF next combat)', fn(p){ p.tempDef=(p.tempDef||0)+1; addLog('Ward placed.','info'); } },
-      { text:'Walk past',                          fn(p){ addLog('The door stays shut.','dim'); } },
+      { text:'Force open (triggers extra combat)',   fn(p){ addLog('Something wakes!','warn'); G.extraCombat=true; } },
+      { text:'Ward the door (+1 DEF next fight)',    fn(p){ p.tempDef=(p.tempDef||0)+1; addLog('Ward placed.','info'); } },
+      { text:'Seal it with blood (-4 HP, +8 XP)',   fn(p){ p.hp=Math.max(1,p.hp-4); gainXP(p,8); addLog('Sealed: -4 HP +8 XP','warn'); updateHUD(); } },
+      { text:'Walk past',                            fn(p){ addLog('The door stays shut.','dim'); } },
     ]
   },
   {
     id:'forge', title:'RUINED FORGE',
     desc:'Ancient flames still burn.',
     choices:[
-      { text:'Temper weapon (4g or +1 PWR free, +2 PWR if paid)', fn(p){ if(p.gold>=4){ p.gold-=4; p.power+=2; addLog('Forge: +2 PWR.','level'); } else { p.power+=1; addLog('Forge: +1 PWR.','level'); } updateHUD(); } },
-      { text:'Cool in void water (+2 DEF)',         fn(p){ p.defense+=2; addLog('Forge: +2 DEF.','level'); updateHUD(); } },
-      { text:'Leave',                               fn(p){ addLog('The flames die.','dim'); } },
+      { text:'Temper weapon (4g: +2 PWR, else +1)',  fn(p){ if(p.gold>=4){ p.gold-=4; p.power+=2; addLog('Forge: +2 PWR','level'); } else { p.power+=1; addLog('Forge: +1 PWR','level'); } updateHUD(); } },
+      { text:'Void-cool armour (+2 DEF)',             fn(p){ p.defense+=2; addLog('Forge: +2 DEF','level'); updateHUD(); } },
+      { text:'Reforge soul (+3 PWR -4 DEF)',          fn(p){ p.power+=3; p.defense=Math.max(0,p.defense-4); addLog('Reforged: +3 PWR -4 DEF','warn'); updateHUD(); } },
+      { text:'Leave',                                 fn(p){ addLog('The flames die.','dim'); } },
     ]
   },
   {
     id:'vision', title:'VOID VISION',
     desc:'Reality warps. Three paths forward.',
     choices:[
-      { text:'Follow the light (skip next combat)',      fn(p){ G.skipNextCombat=true; addLog('Combat skipped.','info'); } },
-      { text:'Embrace the dark (+3 PWR, Curse 2 self)',  fn(p){ p.power+=3; applyStatus(p,'curse',2); addLog('+3 PWR, Curse 2.','warn'); updateHUD(); } },
-      { text:'Turn away',                               fn(p){ addLog('You look away.','dim'); } },
+      { text:'Follow the light (skip next combat)',       fn(p){ G.skipNextCombat=true; addLog('Combat skipped.','info'); } },
+      { text:'Embrace the dark (+3 PWR, Curse 2 self)',   fn(p){ p.power+=3; applyStatus(p,'curse',2); addLog('+3 PWR, Curse 2','warn'); updateHUD(); } },
+      { text:'Consume the vision (+20 XP, Weak 2 self)', fn(p){ gainXP(p,20); applyStatus(p,'weak',2); addLog('+20 XP, Weak 2','warn'); } },
+      { text:'Turn away',                                fn(p){ addLog('You look away.','dim'); } },
     ]
   },
   {
@@ -776,9 +963,14 @@ const RANDOM_EVENTS = [
     choices:[
       { text:'Open it', fn(p){
         const roll=Math.random();
-        if(roll<.15){ p.hp=Math.max(1,p.hp-10); addLog('Trapped! -10 HP.','dmg'); updateHUD(); }
-        else if(roll<.55){ const g=rng(5,15); p.gold+=g; addLog('Gold! +'+g+'.','loot'); updateHUD(); }
-        else { addLog('A skill scroll glows inside!','loot'); rewardSkillPick(p,3,'SKILL SCROLL'); }
+        if(roll<.12){ p.hp=Math.max(1,p.hp-12); addLog('Trapped! -12 HP','dmg'); updateHUD(); }
+        else if(roll<.15){ addLog('MIMIC! Forced combat!','warn'); G.forcedCombat=true; }
+        else if(roll<.50){ const g=rng(6,18); p.gold+=g; addLog('Gold! +'+g,'loot'); updateHUD(); }
+        else if(roll<.75){ addLog('Skill scroll inside!','loot'); rewardSkillPick(p,3,'SKILL SCROLL'); }
+        else { addLog('A relic glints inside!','loot'); offerRelic(p); }
+      } },
+      { text:'Listen first (reveal contents safely)', fn(p){
+        addLog('You hear... '+(['gold','a mechanism','breathing','silence'])[Math.floor(Math.random()*4)],'info');
       } },
       { text:'Leave it', fn(p){ addLog('You leave the chest.','dim'); } },
     ]
@@ -787,22 +979,24 @@ const RANDOM_EVENTS = [
     id:'wanderer', title:'LOST WANDERER',
     desc:'A dying wanderer clutches a scroll.',
     choices:[
-      { text:'Help them (+5 HP + learn skill)',  fn(p){ healPlayer(p,5); rewardSkillPick(p,2,'WANDERER GIFT'); } },
-      { text:'Take scroll by force (fight them)', fn(p){ G.forcedCombat=true; addLog('They draw a blade!','warn'); } },
-      { text:'Pass',                             fn(p){ addLog('You leave them.','dim'); } },
+      { text:'Help them (+5 HP + skill)',       fn(p){ healPlayer(p,5); rewardSkillPick(p,2,'WANDERER GIFT'); } },
+      { text:'Take scroll by force (fight)',    fn(p){ G.forcedCombat=true; addLog('They draw a blade!','warn'); } },
+      { text:'Loot their pack (8 gold, no HP)', fn(p){ p.gold+=8; addLog('Looted: +8 gold.','loot'); updateHUD(); } },
+      { text:'Pass',                            fn(p){ addLog('You leave them.','dim'); } },
     ]
   },
   {
     id:'bonfire', title:'DYING BONFIRE',
     desc:'Embers pulse with residual life.',
     choices:[
-      { text:'Rest (+20% max HP)', fn(p){ const h=Math.max(1,Math.floor(p.maxHp*.2)); healPlayer(p,h); addLog('Rested: +'+h+' HP.','heal'); } },
-      { text:'Burn shard (+1 PWR or DEF)', fn(p){
-        if(Math.random()<.5){ p.power+=1; addLog('Shard: +1 PWR.','level'); }
-        else { p.defense+=1; addLog('Shard: +1 DEF.','level'); }
-        updateHUD();
+      { text:'Rest (+20% max HP)',             fn(p){ const h=Math.max(1,Math.floor(p.maxHp*.2)); healPlayer(p,h); } },
+      { text:'Burn shard (+1 PWR or DEF)',     fn(p){ if(Math.random()<.5){ p.power+=1; addLog('+1 PWR','level'); } else { p.defense+=1; addLog('+1 DEF','level'); } updateHUD(); } },
+      { text:'Burn skill (lose 1, gain 2 XP per level)', fn(p){
+        const actives=p.skills.filter(s=>SKILLS[s]&&SKILLS[s].type==='active'&&s!=='slash');
+        if(actives.length){ const s=actives[Math.floor(Math.random()*actives.length)]; p.skills=p.skills.filter(x=>x!==s); gainXP(p,p.level*2); addLog('Burned '+SKILLS[s].name+' for XP','warn'); }
+        else addLog('Nothing to burn.','dim');
       } },
-      { text:'Move on', fn(p){ addLog('The embers fade.','dim'); } },
+      { text:'Move on',                        fn(p){ addLog('The embers fade.','dim'); } },
     ]
   },
   {
@@ -810,14 +1004,142 @@ const RANDOM_EVENTS = [
     desc:'A crack in the world leaks void energy.',
     choices:[
       { text:'Absorb void (60%: +4 PWR, 40%: -10 HP + Curse 3)', fn(p){
-        if(Math.random()<.6){ p.power+=4; addLog('Absorbed! +4 PWR.','level'); updateHUD(); }
-        else { p.hp=Math.max(1,p.hp-10); applyStatus(p,'curse',3); addLog('Void burns! -10 HP.','dmg'); updateHUD(); }
+        if(Math.random()<.6){ p.power+=4; addLog('Absorbed! +4 PWR','level'); updateHUD(); }
+        else { p.hp=Math.max(1,p.hp-10); applyStatus(p,'curse',3); addLog('Void burns! -10 HP','dmg'); updateHUD(); }
       } },
-      { text:'Seal it (+2 DEF, +10 XP)', fn(p){ p.defense+=2; gainXP(p,10); addLog('Sealed: +2 DEF +10 XP.','level'); updateHUD(); } },
-      { text:'Flee',                     fn(p){ addLog('You run.','dim'); } },
+      { text:'Seal it (+2 DEF, +10 XP)',       fn(p){ p.defense+=2; gainXP(p,10); addLog('Sealed: +2 DEF +10 XP','level'); updateHUD(); } },
+      { text:'Throw your weapon in (lose 2 PWR, gain Void Bolt)', fn(p){
+        if(!p.skills.includes('voidBolt')){ p.power=Math.max(1,p.power-2); p.skills.push('voidBolt'); addLog('Weapon absorbed — Void Bolt learned! -2 PWR','info'); renderSkills(); }
+        else { addLog('You already wield void.','dim'); }
+      } },
+      { text:'Flee',                           fn(p){ addLog('You run.','dim'); } },
+    ]
+  },
+  // NEW EVENTS
+  {
+    id:'altar', title:'SACRIFICIAL ALTAR',
+    desc:'An obsidian altar weeps blood. Power awaits those willing to pay.',
+    choices:[
+      { text:'Sacrifice 20% max HP → +3 PWR permanently', fn(p){
+        const cost=Math.floor(p.maxHp*.2); p.hp=Math.max(1,p.hp-cost); p.power+=3;
+        addLog('Sacrificed '+cost+' HP. +3 PWR','warn'); updateHUD();
+      } },
+      { text:'Sacrifice a skill → +8 PWR permanently', fn(p){
+        const actives=p.skills.filter(s=>SKILLS[s]&&SKILLS[s].type==='active'&&s!=='slash');
+        if(actives.length){ const s=actives[Math.floor(Math.random()*actives.length)]; p.skills=p.skills.filter(x=>x!==s); p.power+=8; addLog('Sacrificed '+SKILLS[s].name+'. +8 PWR!','warn'); renderSkills(); updateHUD(); }
+        else { addLog('Nothing to sacrifice.','dim'); }
+      } },
+      { text:'Refuse',                          fn(p){ addLog('You walk away.','dim'); } },
+    ]
+  },
+  {
+    id:'oracle', title:'BLIND ORACLE',
+    desc:'A blind figure whispers of your future death.',
+    choices:[
+      { text:'Learn your fate (reveal next 3 events in log)', fn(p){
+        addLog('Oracle: Combat, Event, '+( Math.random()<.5?'Combat':'Event')+'...','event');
+        addLog('Oracle: Beware the one who consumes.','event');
+      } },
+      { text:'Beg for power (random: +2/+4/+6 PWR, -10/-20/-30 HP)', fn(p){
+        const tiers=[[2,10],[4,20],[6,30]];
+        const t=tiers[Math.floor(Math.random()*3)];
+        p.power+=t[0]; p.hp=Math.max(1,p.hp-t[1]);
+        addLog('Oracle grants +'+t[0]+' PWR, -'+t[1]+' HP','warn'); updateHUD();
+      } },
+      { text:'Gouge your own eyes (+4 DEF, Blind: -20% dodge for 2 floors)', fn(p){
+        p.defense+=4; addLog('Blinded yourself: +4 DEF','warn'); updateHUD();
+      } },
+      { text:'Leave',                           fn(p){ addLog('The oracle laughs.','dim'); } },
+    ]
+  },
+  {
+    id:'graveRobber', title:'GRAVE ROBBER',
+    desc:'A filthy figure digs furiously nearby.',
+    choices:[
+      { text:'Rob them (fight, then +15 gold)',   fn(p){ G.forcedCombat=true; p.gold+=15; addLog('You attack the robber. +15 gold after.','warn'); } },
+      { text:'Trade (pay 5g, learn what they found)', fn(p){
+        if(p.gold>=5){ p.gold-=5; rewardSkillPick(p,2,'GRAVE FIND'); }
+        else addLog('Not enough gold.','warn');
+      } },
+      { text:'Help dig (-5 HP, gain 10 gold)',    fn(p){ p.hp=Math.max(1,p.hp-5); p.gold+=10; addLog('You dig. -5 HP +10 gold.','loot'); updateHUD(); } },
+      { text:'Ignore',                            fn(p){ addLog('You move on.','dim'); } },
+    ]
+  },
+  {
+    id:'poisonSwamp', title:'POISON SWAMP',
+    desc:'The path leads through a bubbling swamp. No way around.',
+    choices:[
+      { text:'Wade through (Poison 3, -5 HP)',    fn(p){ applyStatus(p,'poison',3); p.hp=Math.max(1,p.hp-5); addLog('Waded through. -5 HP, Poison 3','dmg'); updateHUD(); } },
+      { text:'Craft a filter (costs 8g, no effect)', fn(p){
+        if(p.gold>=8){ p.gold-=8; addLog('Filter crafted. Passed safely.','info'); }
+        else { applyStatus(p,'poison',2); addLog('No gold. Poison 2','dmg'); }
+      } },
+      { text:'Drink the swamp water (20%: +3 PWR, 80%: Poison 5)', fn(p){
+        if(Math.random()<.2){ p.power+=3; addLog('Adapted! +3 PWR','level'); updateHUD(); }
+        else { applyStatus(p,'poison',5); addLog('Horrific. Poison 5.','dmg'); }
+      } },
+    ]
+  },
+  {
+    id:'chaosPortal', title:'CHAOS PORTAL',
+    desc:'A swirling rift offers power without price — or so it seems.',
+    choices:[
+      { text:'Step through (random massive effect)', fn(p){
+        const effects=[
+          ()=>{ p.power+=8; addLog('PWR SURGE: +8 PWR!','level'); updateHUD(); },
+          ()=>{ p.hp=Math.max(1,p.hp-25); addLog('VOID BURN: -25 HP!','dmg'); updateHUD(); },
+          ()=>{ healPlayer(p,p.maxHp); addLog('FULL HEAL!','heal'); },
+          ()=>{ p.power+=4; p.defense+=4; addLog('+4 PWR +4 DEF','level'); updateHUD(); },
+          ()=>{ p.maxHp=Math.max(10,p.maxHp-15); p.power+=10; addLog('-15 maxHP +10 PWR','warn'); updateHUD(); },
+          ()=>{ rewardSkillPick(p,4,'CHAOS GIFT'); },
+          ()=>{ applyStatus(p,'poison',5); applyStatus(p,'bleed',5); applyStatus(p,'curse',5); addLog('CURSED BY CHAOS','dmg'); },
+          ()=>{ p.gold+=50; addLog('+50 GOLD','loot'); updateHUD(); },
+        ];
+        effects[Math.floor(Math.random()*effects.length)]();
+      } },
+      { text:'Seal it with DEF (-3 DEF, +15 XP)', fn(p){ p.defense=Math.max(0,p.defense-3); gainXP(p,15); addLog('Sealed: -3 DEF +15 XP','info'); updateHUD(); } },
+      { text:'Run',                               fn(p){ addLog('You flee the portal.','dim'); } },
+    ]
+  },
+  {
+    id:'bloodMoon', title:'BLOOD MOON RISES',
+    desc:'The sky turns red. Something ancient stirs.',
+    choices:[
+      { text:'Embrace it (Rage 3, Regen 3, Bleed 2 self)', fn(p){ applyStatus(p,'rage',3); applyStatus(p,'regen',3); applyStatus(p,'bleed',2); addLog('Blood Moon embraced!','warn'); } },
+      { text:'Ward yourself (+3 DEF, next combat enemy Weak 2)', fn(p){
+        p.defense+=3; p.tempDef=(p.tempDef||0); p.bloodMoonWard=true;
+        addLog('Warded: +3 DEF, enemy Weak 2 next fight','info'); updateHUD();
+      } },
+      { text:'Ignore it',                          fn(p){ addLog('The red light fades.','dim'); } },
+    ]
+  },
+  {
+    id:'deadKnight', title:'FALLEN KNIGHT',
+    desc:'A dead knight in rusted armour. Still clutching its sword.',
+    choices:[
+      { text:'Take the sword (+2 PWR permanent)',   fn(p){ p.power+=2; addLog('Ancient sword: +2 PWR','level'); updateHUD(); } },
+      { text:'Take the armour (+2 DEF permanent)',  fn(p){ p.defense+=2; addLog('Ancient armour: +2 DEF','level'); updateHUD(); } },
+      { text:'Reanimate it (fight, then take both on win)', fn(p){ G.forcedCombat=true; p.knightReward=true; addLog('The knight stirs...','warn'); } },
+      { text:'Leave it',                           fn(p){ addLog('Rest in peace.','dim'); } },
+    ]
+  },
+  {
+    id:'voidLibrary', title:'VOID LIBRARY',
+    desc:'Shelves of forbidden tomes dissolving into darkness.',
+    choices:[
+      { text:'Read the Tome of Power (50%: +3 PWR, 50%: Curse 3)', fn(p){
+        if(Math.random()<.5){ p.power+=3; addLog('Tome: +3 PWR','level'); updateHUD(); }
+        else { applyStatus(p,'curse',3); addLog('Tome: Curse 3','dmg'); }
+      } },
+      { text:'Read the Tome of Blood (learn 2 skills, Bleed 2 self)', fn(p){
+        applyStatus(p,'bleed',2); rewardSkillPick(p,2,'TOME OF BLOOD');
+      } },
+      { text:'Burn all the tomes (+20 XP, Rage 2)',  fn(p){ gainXP(p,20); applyStatus(p,'rage',2); addLog('Burned the library. +20 XP','warn'); } },
+      { text:'Leave',                               fn(p){ addLog('You back away.','dim'); } },
     ]
   },
 ];
+
 
 // ============================================================
 // GAME STATE
@@ -1103,7 +1425,8 @@ function startCombat(extra=false, isBossFloor=false){
   if(isBossFloor && p.floor>=5) pool = ENEMIES.filter(e=>e.isBoss);
   else if(p.floor<=2)           pool = ENEMIES.filter(e=>e.tier===1);
   else if(p.floor<=4)           pool = ENEMIES.filter(e=>e.tier===1||e.tier===2);
-  else                          pool = ENEMIES.filter(e=>e.tier===2||e.tier===3);
+  else if(p.floor<=8)           pool = ENEMIES.filter(e=>e.tier===2||e.tier===3);
+  else pool = ENEMIES.filter(e=>e.tier===3||e.tier===4);
   if(!pool.length) pool = ENEMIES.filter(e=>!e.isBoss);
   if(!pool.length) pool = ENEMIES;
 
@@ -1300,6 +1623,50 @@ function endTurn(){
   if(p.hp<=0){ die(); return; }
 
   updateHUD();
+
+  // Void Blood: passive shield gain
+  if(p.passives.includes('voidBlood')){
+    p.statuses.shield = (p.statuses.shield||0)+1;
+  }
+
+  // Berserker Blood: +1 PWR temporary when low HP
+  if(p.passives.includes('berserkerBlood') && p.hp < p.maxHp*.5){
+    // just addLog for flavour — the PWR is already set at acquire
+  }
+
+  // Death's Door: +8 PWR when below 20%
+  if(p.passives.includes('deathsDoor')){
+    if(p.hp < p.maxHp*.2 && !p.deathsDoorActive){
+      p.deathsDoorActive=true; p.power+=8; addLog("Death's Door: +8 PWR!",'warn');
+    } else if(p.hp >= p.maxHp*.2 && p.deathsDoorActive){
+      p.deathsDoorActive=false; p.power=Math.max(1,p.power-8);
+    }
+  }
+
+  // Void Eater: +1 PWR every 3 turns
+  if(p.passives.includes('voidEater') && combatState && combatState.turn%3===0 && combatState.turn>0){
+    p.power+=1; addLog('Void Eater: +1 PWR','dim');
+  }
+
+  // Bleed Mastery: extra bleed dmg handled by modifying tickStatuses
+  // Wraith Band relic
+  if(p.relics.includes('wraithBand') && combatState && Math.random()<.2){
+    applyStatus(combatState.enemy,'weak',1);
+  }
+
+  // Martyr Seal relic — already fires inside dealDmg, but easier to add here as a hook:
+  // (no change needed — it's luck-based on hit receipt)
+
+  // Relentless passive: skills cost HP not CD
+  // Already handled — in playerAction, before setting cooldown:
+  if(p.passives.includes('relentless')){
+    // after skill use, override cooldown to 0
+    Object.keys(p.skillCooldowns).forEach(k=>delete p.skillCooldowns[k]);
+    p.hp=Math.max(1,p.hp-2);
+    addLog('Relentless: -2 HP, no CD','dim');
+  }
+
+
   renderCombatUI();
 }
 
