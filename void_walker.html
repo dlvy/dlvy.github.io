@@ -2,38 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VOID WALKER — Roguelike</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VOID WALKER</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+
+  /* Fluid base font: 16px on mobile, 18px on desktop */
+  @media (min-width: 600px) { html { font-size: 18px; } }
 
   body {
     background: #0a0a0f;
     color: #c8c8d8;
     font-family: 'Share Tech Mono', 'Courier New', monospace;
-    font-size: 18px;
+    font-size: 1rem;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 12px;
+    padding-bottom: 32px;
   }
 
   h1 {
     color: #7f5af0;
-    font-size: 28px;
+    font-size: 1.4rem;
     letter-spacing: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     text-shadow: 0 0 20px #7f5af066;
+    text-align: center;
   }
 
   .subtitle {
     color: #555;
-    font-size: 11px;
+    font-size: 0.65rem;
     letter-spacing: 2px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    text-align: center;
   }
 
   #game {
@@ -41,14 +48,14 @@
     max-width: 960px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   /* HUD row */
   .hud {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
   }
 
   .hud-box {
@@ -59,22 +66,21 @@
 
   .hud-label {
     color: #444;
-    font-size: 10px;
+    font-size: 0.6rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
 
   .hud-val {
-    font-size: 24px;
+    font-size: 1.2rem;
     color: #e0e0f0;
   }
 
   .hp-bar, .xp-bar {
     height: 4px;
     background: #1a1a2e;
-    margin-top: 5px;
-    position: relative;
+    margin-top: 4px;
   }
 
   .hp-fill { height: 100%; background: #2cb67d; transition: width .3s; }
@@ -84,36 +90,65 @@
   /* Status effects */
   .status-row {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     flex-wrap: wrap;
-    min-height: 22px;
+    min-height: 26px;
     padding: 4px 8px;
     border: 1px solid #1a1a2e;
     background: #0a0a12;
+    align-items: center;
   }
 
   .status-tag {
-    font-size: 10px;
+    font-size: 0.65rem;
     padding: 2px 6px;
     border: 1px solid;
     letter-spacing: 1px;
   }
 
-  .status-tag.bleed { color: #e53170; border-color: #e5317044; background: #e5317011; }
-  .status-tag.poison { color: #2cb67d; border-color: #2cb67d44; background: #2cb67d11; }
-  .status-tag.shield { color: #7f5af0; border-color: #7f5af044; background: #7f5af011; }
-  .status-tag.rage { color: #ff8c00; border-color: #ff8c0044; background: #ff8c0011; }
-  .status-tag.stun { color: #aaa; border-color: #aaa4; background: #aaa1; }
-  .status-tag.curse { color: #c84b97; border-color: #c84b9744; background: #c84b9711; }
-  .status-tag.regen { color: #72ddf7; border-color: #72ddf744; background: #72ddf711; }
-  .status-tag.weak { color: #f4a261; border-color: #f4a26144; background: #f4a26111; }
+  .status-tag.bleed  { color:#e53170; border-color:#e5317044; background:#e5317011; }
+  .status-tag.poison { color:#2cb67d; border-color:#2cb67d44; background:#2cb67d11; }
+  .status-tag.shield { color:#7f5af0; border-color:#7f5af044; background:#7f5af011; }
+  .status-tag.rage   { color:#ff8c00; border-color:#ff8c0044; background:#ff8c0011; }
+  .status-tag.stun   { color:#aaa;    border-color:#aaa4;      background:#aaa1; }
+  .status-tag.curse  { color:#c84b97; border-color:#c84b9744;  background:#c84b9711; }
+  .status-tag.regen  { color:#72ddf7; border-color:#72ddf744;  background:#72ddf711; }
+  .status-tag.weak   { color:#f4a261; border-color:#f4a26144;  background:#f4a26111; }
+  .status-tag.reflect{ color:#fff;    border-color:#fff4;      background:#fff1; }
 
-  /* Main content area */
+  /* Relics row */
+  .relics-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 4px 8px;
+    border: 1px solid #1a1a2e;
+    background: #0a0a12;
+    min-height: 26px;
+    align-items: center;
+  }
+
+  .relic-tag {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border: 1px solid #2a2a4a;
+    color: #ffd700;
+    background: #1a1500;
+    letter-spacing: 1px;
+  }
+
+  /* Main layout: stacked on mobile, side-by-side on desktop */
   .main-area {
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 10px;
-    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  @media (min-width: 700px) {
+    .main-area {
+      display: grid;
+      grid-template-columns: 1fr 260px;
+    }
   }
 
   /* Log */
@@ -122,32 +157,37 @@
     background: #08080f;
     padding: 10px;
     overflow-y: auto;
-    max-height: 420px;
-    min-height: 280px;
+    /* shorter on mobile to leave room for action buttons */
+    max-height: 200px;
+    min-height: 120px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
+  }
+
+  @media (min-width: 700px) {
+    .log-panel { max-height: 360px; min-height: 260px; }
   }
 
   .log-entry {
-    font-size: 15px;
+    font-size: 0.75rem;
     line-height: 1.5;
     padding: 1px 0;
     border-bottom: 1px solid #0f0f1a;
     animation: fadein .2s ease;
   }
 
-  @keyframes fadein { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadein { from { opacity:0; transform:translateY(-2px); } to { opacity:1; transform:translateY(0); } }
 
-  .log-entry.dmg { color: #e53170; }
-  .log-entry.heal { color: #2cb67d; }
-  .log-entry.info { color: #7f5af0; }
-  .log-entry.warn { color: #ff8c00; }
-  .log-entry.event { color: #72ddf7; }
-  .log-entry.death { color: #e53170; font-weight: bold; letter-spacing: 1px; }
-  .log-entry.loot { color: #ffd700; }
-  .log-entry.level { color: #7f5af0; }
-  .log-entry.dim { color: #444; }
+  .log-entry.dmg   { color:#e53170; }
+  .log-entry.heal  { color:#2cb67d; }
+  .log-entry.info  { color:#7f5af0; }
+  .log-entry.warn  { color:#ff8c00; }
+  .log-entry.event { color:#72ddf7; }
+  .log-entry.death { color:#e53170; font-weight:bold; letter-spacing:1px; }
+  .log-entry.loot  { color:#ffd700; }
+  .log-entry.level { color:#7f5af0; }
+  .log-entry.dim   { color:#444; }
 
   /* Skills panel */
   .skills-panel {
@@ -161,7 +201,7 @@
 
   .skills-title {
     color: #333;
-    font-size: 10px;
+    font-size: 0.6rem;
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -173,17 +213,19 @@
     background: #0f0f1a;
     border: 1px solid #2a2a3e;
     color: #a0a0c0;
-    padding: 9px 10px;
+    /* min touch target 44px */
+    padding: 10px 10px;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 0.75rem;
     cursor: pointer;
     text-align: left;
     transition: all .15s;
     letter-spacing: .5px;
-    position: relative;
+    min-height: 44px;
+    touch-action: manipulation;
   }
 
-  .skill-btn:hover:not(:disabled) {
+  .skill-btn:hover:not(:disabled), .skill-btn:active:not(:disabled) {
     background: #1a1a2e;
     border-color: #7f5af0;
     color: #e0e0f0;
@@ -197,11 +239,46 @@
   .skill-btn .skill-cost {
     float: right;
     color: #7f5af066;
-    font-size: 10px;
+    font-size: 0.65rem;
   }
 
-  .skill-btn.active { border-color: #7f5af0; color: #c8b8ff; background: #1a1030; }
-  .skill-btn.passive { border-color: #2cb67d44; color: #88c8a8; background: #0a1210; }
+  .skill-btn.passive { border-color:#2cb67d44; color:#88c8a8; background:#0a1210; }
+
+  .skills-inventory {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* on mobile, show as horizontal scroll row */
+  }
+
+  @media (max-width: 699px) {
+    .skills-inventory {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .skill-btn {
+      flex: 1 1 calc(50% - 4px);
+      min-width: 120px;
+    }
+  }
+
+  /* Floor info */
+  .floor-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background: #0a0a0f;
+    border: 1px solid #151520;
+    font-size: 0.7rem;
+    color: #444;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .floor-info .depth { color:#7f5af0; font-size:0.85rem; }
+  .floor-info .gold  { color:#ffd700; }
 
   /* Event choices */
   .choices-area {
@@ -215,17 +292,17 @@
 
   .event-title {
     color: #72ddf7;
-    font-size: 13px;
+    font-size: 0.85rem;
     letter-spacing: 2px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     text-transform: uppercase;
   }
 
   .event-desc {
     color: #888;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.6;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     border-left: 2px solid #1a1a3e;
     padding-left: 8px;
   }
@@ -234,23 +311,22 @@
     background: #0a0a14;
     border: 1px solid #252540;
     color: #c0c0e0;
-    padding: 10px 14px;
+    padding: 10px 12px;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 0.78rem;
     cursor: pointer;
     text-align: left;
     transition: all .15s;
-    letter-spacing: .5px;
+    letter-spacing: .3px;
+    min-height: 44px;
+    touch-action: manipulation;
+    line-height: 1.4;
   }
 
-  .choice-btn:hover {
-    background: #14142a;
-    border-color: #72ddf7;
-    color: #fff;
-  }
-
-  .choice-btn:before { content: "▶ "; color: #333; }
-  .choice-btn:hover:before { color: #72ddf7; }
+  .choice-btn:hover, .choice-btn:active { background:#14142a; border-color:#72ddf7; color:#fff; }
+  .choice-btn:before { content:"▶ "; color:#333; }
+  .choice-btn:hover:before, .choice-btn:active:before { color:#72ddf7; }
+  .choice-btn:disabled { opacity:0.4; }
 
   /* Enemy display */
   .enemy-area {
@@ -259,72 +335,56 @@
     padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }
 
   .enemy-name {
     color: #e53170;
-    font-size: 20px;
+    font-size: 1rem;
     letter-spacing: 2px;
     text-transform: uppercase;
   }
 
   .enemy-ascii {
     color: #e53170;
-    font-size: 11px;
-    line-height: 1.3;
+    font-size: 0.75rem;
     opacity: 0.7;
-    padding: 4px 0;
-    min-height: 36px;
+    padding: 2px 0;
   }
 
   .enemy-hp-bar {
     height: 3px;
     background: #1a0a0a;
-    position: relative;
     margin: 2px 0 4px;
   }
 
-  .enemy-hp-fill { height: 100%; background: #e53170; transition: width .3s; }
+  .enemy-hp-fill { height:100%; background:#e53170; transition:width .3s; }
 
-  .enemy-intent {
-    color: #ff8c00;
-    font-size: 11px;
-    letter-spacing: 1px;
-  }
+  .enemy-intent { color:#ff8c00; font-size:0.72rem; letter-spacing:1px; }
 
-  .enemy-status-row {
+  .enemy-status-row { display:flex; gap:4px; flex-wrap:wrap; min-height:16px; }
+
+  /* Combat action row — horizontal scroll on mobile */
+  .action-row {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     flex-wrap: wrap;
-    min-height: 16px;
+    padding: 4px 0;
   }
 
-  /* Floor / depth */
-  .floor-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 10px;
-    background: #0a0a0f;
-    border: 1px solid #151520;
-    font-size: 11px;
-    color: #333;
+  @media (max-width: 699px) {
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
   }
 
-  .floor-info .depth { color: #7f5af0; font-size: 13px; }
-  .floor-info .gold { color: #ffd700; }
-
-  /* Skills inventory grid */
-  .skills-inventory {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 240px;
-    overflow-y: auto;
+  .action-row .skill-btn {
+    flex: 1 1 auto;
   }
 
-  /* Screen overlays */
+  /* Overlays */
   .screen-overlay {
     position: fixed;
     inset: 0;
@@ -333,29 +393,25 @@
     align-items: center;
     justify-content: center;
     z-index: 100;
+    padding: 16px;
   }
 
   .overlay-box {
     border: 1px solid #7f5af0;
     background: #0a0a14;
-    padding: 30px 40px;
+    padding: 24px 28px;
     text-align: center;
-    max-width: 400px;
-    width: 90%;
+    max-width: 420px;
+    width: 100%;
   }
 
-  .overlay-box h2 {
-    font-size: 24px;
-    letter-spacing: 4px;
-    margin-bottom: 12px;
-  }
-
-  .overlay-box.death h2 { color: #e53170; }
-  .overlay-box.victory h2 { color: #7f5af0; }
+  .overlay-box h2 { font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 10px; }
+  .overlay-box.death h2   { color:#e53170; }
+  .overlay-box.victory h2 { color:#7f5af0; }
 
   .overlay-box p {
     color: #888;
-    font-size: 12px;
+    font-size: 0.78rem;
     margin-bottom: 6px;
     line-height: 1.6;
   }
@@ -364,19 +420,18 @@
     background: transparent;
     border: 1px solid #7f5af0;
     color: #7f5af0;
-    padding: 10px 24px;
+    padding: 12px 24px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 0.85rem;
     cursor: pointer;
     letter-spacing: 2px;
-    margin-top: 16px;
+    margin-top: 14px;
     transition: all .2s;
+    min-height: 44px;
+    touch-action: manipulation;
   }
 
-  .overlay-btn:hover {
-    background: #7f5af0;
-    color: #fff;
-  }
+  .overlay-btn:hover, .overlay-btn:active { background:#7f5af0; color:#fff; }
 
   /* Reward screen */
   .reward-grid {
@@ -384,51 +439,34 @@
     flex-direction: column;
     gap: 6px;
     margin-top: 10px;
+    max-height: 70vh;
+    overflow-y: auto;
   }
 
   .reward-btn {
     background: #0a0a14;
     border: 1px solid #2a2a4a;
     color: #c0c0e0;
-    padding: 8px 12px;
+    padding: 10px 12px;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 0.78rem;
     cursor: pointer;
     text-align: left;
     transition: all .15s;
+    min-height: 44px;
+    touch-action: manipulation;
+    line-height: 1.4;
   }
 
-  .reward-btn:hover { background: #14142a; border-color: #7f5af0; color: #fff; }
+  .reward-btn:hover, .reward-btn:active { background:#14142a; border-color:#7f5af0; color:#fff; }
 
-  .tag-active { color: #72ddf7; }
-  .tag-passive { color: #2cb67d; }
-
-  /* Relic row */
-  .relics-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    padding: 4px 8px;
-    border: 1px solid #1a1a2e;
-    background: #0a0a12;
-    min-height: 28px;
-  }
-
-  .relic-tag {
-    font-size: 10px;
-    padding: 2px 7px;
-    border: 1px solid #2a2a4a;
-    color: #ffd700;
-    background: #1a1500;
-    letter-spacing: 1px;
-    cursor: help;
-  }
+  .tag-active  { color:#72ddf7; }
+  .tag-passive { color:#2cb67d; }
 
   /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: #0a0a0f; }
   ::-webkit-scrollbar-thumb { background: #252540; }
-  ::-webkit-scrollbar-thumb:hover { background: #7f5af055; }
 </style>
 </head>
 <body>
@@ -438,19 +476,17 @@
 
 <div id="game">
 
-  <!-- Floor info row -->
   <div class="floor-info">
     <span>FLOOR <span class="depth" id="floorNum">1</span></span>
-    <span id="classLabel" style="color:#7f5af0;letter-spacing:2px;font-size:12px">WANDERER</span>
+    <span id="classLabel" style="color:#7f5af0;letter-spacing:2px;font-size:0.75rem">WANDERER</span>
     <span>STEP <span id="stepNum" style="color:#555">0</span></span>
     <span class="gold">◈ <span id="goldNum">0</span></span>
   </div>
 
-  <!-- Player HUD -->
   <div class="hud">
     <div class="hud-box">
       <div class="hud-label">HP</div>
-      <div class="hud-val"><span id="hpCur">30</span> / <span id="hpMax">30</span></div>
+      <div class="hud-val"><span id="hpCur">30</span>/<span id="hpMax">30</span></div>
       <div class="hp-bar"><div class="hp-fill" id="hpBar" style="width:100%"></div></div>
     </div>
     <div class="hud-box">
@@ -459,29 +495,22 @@
       <div class="xp-bar"><div class="xp-fill" id="xpBar" style="width:0%"></div></div>
     </div>
     <div class="hud-box">
-      <div class="hud-label">POWER · DEF</div>
-      <div class="hud-val"><span id="powVal">5</span> · <span id="defVal">0</span></div>
+      <div class="hud-label">PWR · DEF</div>
+      <div class="hud-val"><span id="powVal">5</span>·<span id="defVal">0</span></div>
     </div>
   </div>
 
-  <!-- Status row -->
-  <div class="status-row" id="statusRow"><span style="color:#2a2a4a;font-size:10px">no active effects</span></div>
+  <div class="status-row" id="statusRow"><span style="color:#2a2a4a;font-size:0.65rem">no active effects</span></div>
+  <div class="relics-row" id="relicsRow"><span style="color:#2a2a4a;font-size:0.65rem">no relics</span></div>
 
-  <!-- Relics row -->
-  <div class="relics-row" id="relicsRow"><span style="color:#2a2a4a;font-size:10px">no relics</span></div>
-
-  <!-- Main content -->
   <div class="main-area" id="mainArea">
-    <!-- Left: event/combat log -->
     <div class="log-panel" id="logPanel"></div>
-    <!-- Right: skills -->
     <div class="skills-panel" id="skillsPanel">
       <div class="skills-title">⚔ Skills</div>
       <div class="skills-inventory" id="skillsInventory"></div>
     </div>
   </div>
 
-  <!-- Event / combat UI -->
   <div id="actionArea"></div>
 
 </div>
@@ -508,351 +537,284 @@
 <!-- Reward overlay -->
 <div class="screen-overlay" id="rewardScreen" style="display:none">
   <div class="overlay-box" style="max-width:480px">
-    <h2 style="color:#7f5af0;font-size:16px;letter-spacing:3px" id="rewardTitle">CHOOSE A REWARD</h2>
+    <h2 style="color:#7f5af0;font-size:1rem;letter-spacing:3px" id="rewardTitle">CHOOSE A REWARD</h2>
     <div class="reward-grid" id="rewardGrid"></div>
   </div>
 </div>
 
 <script>
 // ============================================================
-// DATA DEFINITIONS
+// DATA
 // ============================================================
 
 const SKILLS = {
-  // ---- ACTIVE SKILLS ----
   slash: {
     id:'slash', name:'SLASH', type:'active',
-    desc:'Basic melee. 100% PWR dmg.',
-    cost:0, cooldown:0,
+    desc:'100% PWR dmg.', cooldown:0,
     use(p,e){ return dealDmg(p,e,p.power); }
   },
   heavyStrike: {
     id:'heavyStrike', name:'HEAVY STRIKE', type:'active',
-    desc:'150% PWR dmg. Skip next turn.',
-    cost:0, cooldown:2,
+    desc:'150% PWR dmg. Skip next turn.', cooldown:2,
     use(p,e){ p.skipTurn=true; return dealDmg(p,e,Math.floor(p.power*1.5)); }
   },
   vampireSlash: {
     id:'vampireSlash', name:'VAMPIRE SLASH', type:'active',
-    desc:'80% PWR dmg, heal 50% dealt.',
-    cost:0, cooldown:1,
+    desc:'80% PWR dmg, heal 50% dealt.', cooldown:1,
     use(p,e){
       const d=dealDmg(p,e,Math.floor(p.power*.8));
-      const h=Math.max(1,Math.floor(d/2));
-      healPlayer(p,h);
+      healPlayer(p,Math.max(1,Math.floor(d/2)));
       return d;
     }
   },
   poisonBlade: {
     id:'poisonBlade', name:'POISON BLADE', type:'active',
-    desc:'60% PWR dmg + apply Poison 3.',
-    cost:0, cooldown:1,
+    desc:'60% PWR + Poison 3.', cooldown:1,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.6)); applyStatus(e,'poison',3); return 0; }
   },
   bleedCut: {
     id:'bleedCut', name:'BLEED CUT', type:'active',
-    desc:'70% PWR dmg + Bleed 2.',
-    cost:0, cooldown:1,
+    desc:'70% PWR + Bleed 2.', cooldown:1,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.7)); applyStatus(e,'bleed',2); return 0; }
   },
   shieldBash: {
     id:'shieldBash', name:'SHIELD BASH', type:'active',
-    desc:'Gain Shield 4 + 40% PWR dmg.',
-    cost:0, cooldown:2,
+    desc:'Shield 4 + 40% PWR dmg.', cooldown:2,
     use(p,e){ applyStatus(p,'shield',4); return dealDmg(p,e,Math.floor(p.power*.4)); }
   },
   berserkerRage: {
     id:'berserkerRage', name:'BERSERK', type:'active',
-    desc:'Apply Rage 3 to self (+40% dmg, take +30%).',
-    cost:0, cooldown:3,
+    desc:'Rage 3 on self.', cooldown:3,
     use(p,e){ applyStatus(p,'rage',3); return 0; }
   },
   curseStrike: {
-    id:'curseStrike', name:'CURSED STRIKE', type:'active',
-    desc:'90% PWR dmg + Curse enemy (reduce DEF by 2).',
-    cost:0, cooldown:2,
+    id:'curseStrike', name:'CURSE STRIKE', type:'active',
+    desc:'90% PWR + Curse 2 enemy.', cooldown:2,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.9)); applyStatus(e,'curse',2); return 0; }
   },
   voidBolt: {
     id:'voidBolt', name:'VOID BOLT', type:'active',
-    desc:'120% PWR dmg, ignores DEF.',
-    cost:0, cooldown:2,
+    desc:'120% PWR, ignores DEF.', cooldown:2,
     use(p,e){ return dealDmgTrue(p,e,Math.floor(p.power*1.2)); }
   },
   stunGauntlet: {
     id:'stunGauntlet', name:'STUN GAUNTLET', type:'active',
-    desc:'40% PWR dmg + Stun enemy 1 turn.',
-    cost:0, cooldown:3,
+    desc:'40% PWR + Stun 1.', cooldown:3,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*.4)); applyStatus(e,'stun',1); return 0; }
   },
   mirrorWard: {
     id:'mirrorWard', name:'MIRROR WARD', type:'active',
-    desc:'Reflect next attack + Shield 2.',
-    cost:0, cooldown:4,
+    desc:'Reflect next attack + Shield 2.', cooldown:4,
     use(p,e){ applyStatus(p,'reflect',1); applyStatus(p,'shield',2); return 0; }
   },
   soulDrain: {
     id:'soulDrain', name:'SOUL DRAIN', type:'active',
-    desc:'Steal 2 PWR from enemy for 3 turns.',
-    cost:0, cooldown:3,
-    use(p,e){ p.power+=2; e.power=Math.max(1,e.power-2); addLog(`Soul Drain: +2 PWR stolen!`,'info'); return 0; }
+    desc:'Steal 2 PWR from enemy.', cooldown:3,
+    use(p,e){ p.power+=2; e.power=Math.max(1,e.power-2); addLog('Soul Drain: +2 PWR stolen!','info'); return 0; }
   },
   chainLightning: {
     id:'chainLightning', name:'CHAIN BOLT', type:'active',
-    desc:'110% PWR dmg + Weak 2 on enemy.',
-    cost:0, cooldown:2,
+    desc:'110% PWR + Weak 2.', cooldown:2,
     use(p,e){ dealDmg(p,e,Math.floor(p.power*1.1)); applyStatus(e,'weak',2); return 0; }
   },
   regenSurge: {
     id:'regenSurge', name:'REGEN SURGE', type:'active',
-    desc:'Gain Regen 3 (heal 3/turn).',
-    cost:0, cooldown:3,
+    desc:'Regen 3 on self.', cooldown:3,
     use(p,e){ applyStatus(p,'regen',3); return 0; }
   },
-  // ---- PASSIVE SKILLS ----
+  // PASSIVES
   ironSkin: {
     id:'ironSkin', name:'IRON SKIN', type:'passive',
     desc:'+2 DEF permanently.',
-    onAcquire(p){ p.defense+=2; addLog(`Iron Skin: +2 DEF`,'level'); }
+    onAcquire(p){ p.defense+=2; addLog('Iron Skin: +2 DEF','level'); }
   },
   berserkerBlood: {
     id:'berserkerBlood', name:'BERSERKER BLOOD', type:'passive',
     desc:'+1 PWR when below 50% HP.',
-    onAcquire(p){ p.passives.push('berserkerBlood'); addLog(`Berserker Blood acquired`,'level'); }
+    onAcquire(p){ p.passives.push('berserkerBlood'); addLog('Berserker Blood acquired','level'); }
   },
   voidHeart: {
     id:'voidHeart', name:'VOID HEART', type:'passive',
     desc:'+5 max HP.',
-    onAcquire(p){ p.maxHp+=5; p.hp+=5; addLog(`Void Heart: +5 max HP`,'level'); }
+    onAcquire(p){ p.maxHp+=5; p.hp+=5; addLog('Void Heart: +5 max HP','level'); }
   },
   shadowStep: {
     id:'shadowStep', name:'SHADOW STEP', type:'passive',
-    desc:'20% chance to dodge attacks.',
-    onAcquire(p){ p.passives.push('shadowStep'); addLog(`Shadow Step acquired`,'level'); }
+    desc:'20% dodge chance.',
+    onAcquire(p){ p.passives.push('shadowStep'); addLog('Shadow Step acquired','level'); }
   },
   thornArmor: {
     id:'thornArmor', name:'THORN ARMOR', type:'passive',
-    desc:'Reflect 2 dmg back when hit.',
-    onAcquire(p){ p.passives.push('thornArmor'); addLog(`Thorn Armor acquired`,'level'); }
+    desc:'Reflect 2 dmg when hit.',
+    onAcquire(p){ p.passives.push('thornArmor'); addLog('Thorn Armor acquired','level'); }
   },
   bloodPact: {
     id:'bloodPact', name:'BLOOD PACT', type:'passive',
     desc:'+3 PWR, -5 max HP.',
-    onAcquire(p){ p.power+=3; p.maxHp=Math.max(10,p.maxHp-5); p.hp=Math.min(p.hp,p.maxHp); addLog(`Blood Pact: +3 PWR, -5 max HP`,'warn'); }
+    onAcquire(p){ p.power+=3; p.maxHp=Math.max(10,p.maxHp-5); p.hp=Math.min(p.hp,p.maxHp); addLog('Blood Pact: +3 PWR -5 maxHP','warn'); }
   },
   executioner: {
     id:'executioner', name:'EXECUTIONER', type:'passive',
     desc:'+50% dmg vs enemies below 25% HP.',
-    onAcquire(p){ p.passives.push('executioner'); addLog(`Executioner acquired`,'level'); }
+    onAcquire(p){ p.passives.push('executioner'); addLog('Executioner acquired','level'); }
   },
   soulCollector: {
     id:'soulCollector', name:'SOUL COLLECTOR', type:'passive',
     desc:'+1 PWR per kill.',
-    onAcquire(p){ p.passives.push('soulCollector'); addLog(`Soul Collector acquired`,'level'); }
+    onAcquire(p){ p.passives.push('soulCollector'); addLog('Soul Collector acquired','level'); }
   },
 };
 
 const RELICS = [
-  { id:'cursedBlade', name:'CURSED BLADE', desc:'+5 PWR, take 2 dmg/floor.', onFloor(p){ p.power+=5; }, onTick(p){ p.hp=Math.max(1,p.hp-2); addLog('Cursed Blade: -2 HP','dmg'); } },
-  { id:'healingCrystal', name:'HEALING CRYSTAL', desc:'Heal 5 HP at start of each floor.', onFloor(p){ healPlayer(p,5); } },
-  { id:'goldTotem', name:'GOLD TOTEM', desc:'+3 gold per event.', bonus:'gold' },
-  { id:'luckCharm', name:'LUCK CHARM', desc:'Event outcomes more favourable.', bonus:'luck' },
-  { id:'voidShard', name:'VOID SHARD', desc:'Void Bolt cooldown reduced by 1.', onAcquire(p){ } },
-  { id:'berserkerMask', name:'BERSERKER MASK', desc:'+2 PWR, start each combat with Rage 2.', onCombatStart(p){ applyStatus(p,'rage',2); } },
-  { id:'ancientShield', name:'ANCIENT SHIELD', desc:'+3 DEF permanently.', onAcquire(p){ p.defense+=3; addLog('Ancient Shield: +3 DEF','level'); } },
-  { id:'poisonVial', name:'POISON VIAL', desc:'Combat starts with Poison 2 on enemy.', onCombatStart(p,e){ if(e) applyStatus(e,'poison',2); } },
-  { id:'thornRing', name:'THORN RING', desc:'Thorn reflect +3.', bonus:'thorn3' },
-  { id:'shadowCloak', name:'SHADOW CLOAK', desc:'Dodge chance +10%.', onAcquire(p){ p.dodgeBonus=(p.dodgeBonus||0)+10; } },
+  { id:'cursedBlade',    name:'CURSED BLADE',    desc:'+5 PWR, take 2 dmg/floor.',         onFloor(p){ p.power+=0; }, onTick(p){ p.hp=Math.max(1,p.hp-2); addLog('Cursed Blade: -2 HP','dmg'); }, onAcquire(p){ p.power+=5; addLog('Cursed Blade: +5 PWR','warn'); } },
+  { id:'healingCrystal', name:'HEALING CRYSTAL',  desc:'Heal 5 HP each floor.',              onFloor(p){ healPlayer(p,5); } },
+  { id:'goldTotem',      name:'GOLD TOTEM',        desc:'+3 gold per event.',                bonus:'gold' },
+  { id:'luckCharm',      name:'LUCK CHARM',        desc:'Event outcomes favourable.',        bonus:'luck' },
+  { id:'berserkerMask',  name:'BERSERKER MASK',    desc:'+2 PWR, start combat Rage 2.',      onAcquire(p){ p.power+=2; addLog('Berserker Mask: +2 PWR','level'); }, onCombatStart(p){ applyStatus(p,'rage',2); } },
+  { id:'ancientShield',  name:'ANCIENT SHIELD',    desc:'+3 DEF permanently.',               onAcquire(p){ p.defense+=3; addLog('Ancient Shield: +3 DEF','level'); } },
+  { id:'poisonVial',     name:'POISON VIAL',       desc:'Combat starts with Poison 2 on enemy.', onCombatStart(p,e){ if(e) applyStatus(e,'poison',2); } },
+  { id:'thornRing',      name:'THORN RING',        desc:'Thorn reflect +3.',                 bonus:'thorn3' },
+  { id:'shadowCloak',    name:'SHADOW CLOAK',      desc:'Dodge chance +10%.',                onAcquire(p){ p.dodgeBonus=(p.dodgeBonus||0)+10; addLog('Shadow Cloak: +10% dodge','level'); } },
+  { id:'voidShard',      name:'VOID SHARD',        desc:'All active skill cooldowns -1.',    onAcquire(p){ addLog('Void Shard: cooldowns -1','level'); } },
 ];
 
 const ENEMIES = [
-  // floor 1-2
-  { name:'HOLLOW GRUNT', maxHp:18, power:4, defense:0, xp:8, gold:[2,5],
-    ascii:'[==] /||\\',
-    skills:['strike','strike','howl'],
-    tier:1 },
-  { name:'PLAGUE RAT', maxHp:12, power:3, defense:0, xp:6, gold:[1,4],
-    ascii:'~(o_o)~',
-    skills:['gnaw','gnaw','infect'],
-    tier:1 },
-  { name:'BONE SHARD', maxHp:14, power:5, defense:1, xp:9, gold:[2,4],
-    ascii:'-X- BONE SHARD',
-    skills:['stab','stab','rattle'],
-    tier:1 },
-  // floor 3-4
-  { name:'VOID STALKER', maxHp:24, power:6, defense:1, xp:14, gold:[4,8],
-    ascii:'◈ {||} STALKER',
-    skills:['strike','voidStep','bite','strike'],
-    tier:2 },
-  { name:'CURSED KNIGHT', maxHp:28, power:7, defense:3, xp:16, gold:[5,9],
-    ascii:'[▓▓] KNIGHT',
-    skills:['heavyBlow','block','strike','heavyBlow'],
-    tier:2 },
-  { name:'BROOD WITCH', maxHp:20, power:5, defense:0, xp:15, gold:[4,8],
-    ascii:'*( o_o )* WITCH',
-    skills:['hex','poisonCloud','hex','strike'],
-    tier:2 },
-  // floor 5-6
-  { name:'IRON GOLEM', maxHp:40, power:9, defense:5, xp:22, gold:[7,12],
-    ascii:'[███] GOLEM',
-    skills:['slam','slam','fortify','slam'],
-    tier:3 },
-  { name:'SHADOW REAPER', maxHp:32, power:10, defense:2, xp:24, gold:[8,13],
-    ascii:'(X) REAPER',
-    skills:['soul','reap','soul','bleed','reap'],
-    tier:3 },
-  // bosses
-  { name:'THE DEVOURER', maxHp:60, power:12, defense:4, xp:50, gold:[15,25],
-    ascii:'◈══◈ {[▓▓]} DEVOURER ◈══◈',
-    skills:['consume','slam','consume','rage','slam'],
-    tier:'boss', isBoss:true },
-  { name:'VOID LORD', maxHp:80, power:15, defense:6, xp:80, gold:[25,40],
-    ascii:'◈════◈ [██████] VOID LORD ◈════◈',
-    skills:['voidBeam','consume','voidBeam','curse','slam','voidBeam'],
-    tier:'boss', isBoss:true },
+  { name:'HOLLOW GRUNT',  maxHp:18, power:4,  defense:0, xp:8,  gold:[2,5],  ascii:'[==] GRUNT',           skills:['strike','strike','howl'],                    tier:1 },
+  { name:'PLAGUE RAT',    maxHp:12, power:3,  defense:0, xp:6,  gold:[1,4],  ascii:'~(o_o)~ RAT',          skills:['gnaw','gnaw','infect'],                      tier:1 },
+  { name:'BONE SHARD',    maxHp:14, power:5,  defense:1, xp:9,  gold:[2,4],  ascii:'-X- BONE SHARD',       skills:['stab','stab','rattle'],                      tier:1 },
+  { name:'VOID STALKER',  maxHp:24, power:6,  defense:1, xp:14, gold:[4,8],  ascii:'◈{||}◈ STALKER',      skills:['strike','voidStep','bite','strike'],          tier:2 },
+  { name:'CURSED KNIGHT', maxHp:28, power:7,  defense:3, xp:16, gold:[5,9],  ascii:'[vv] KNIGHT',          skills:['heavyBlow','block','strike','heavyBlow'],    tier:2 },
+  { name:'BROOD WITCH',   maxHp:20, power:5,  defense:0, xp:15, gold:[4,8],  ascii:'*(o_o)* WITCH',        skills:['hex','poisonCloud','hex','strike'],           tier:2 },
+  { name:'IRON GOLEM',    maxHp:40, power:9,  defense:5, xp:22, gold:[7,12], ascii:'[###] GOLEM',          skills:['slam','slam','fortify','slam'],               tier:3 },
+  { name:'SHADOW REAPER', maxHp:32, power:10, defense:2, xp:24, gold:[8,13], ascii:'(X) REAPER',           skills:['soul','reap','soul','bleed','reap'],          tier:3 },
+  { name:'THE DEVOURER',  maxHp:60, power:12, defense:4, xp:50, gold:[15,25],ascii:'<<DEVOURER>>',         skills:['consume','slam','consume','rage','slam'],     tier:'boss', isBoss:true },
+  { name:'VOID LORD',     maxHp:80, power:15, defense:6, xp:80, gold:[25,40],ascii:'<< VOID LORD >>',      skills:['voidBeam','consume','voidBeam','curse','slam','voidBeam'], tier:'boss', isBoss:true },
 ];
 
 const ENEMY_SKILLS = {
-  strike: { name:'STRIKES', dmg:1.0, effect:null },
-  gnaw:   { name:'GNAWS', dmg:0.8, effect:null },
-  stab:   { name:'STABS', dmg:1.1, effect:null },
-  bite:   { name:'BITES', dmg:0.9, effect:'bleed1' },
-  howl:   { name:'HOWLS', dmg:0, effect:'rage1' },
-  infect: { name:'INFECTS', dmg:0.5, effect:'poison2' },
-  rattle: { name:'RATTLES', dmg:0, effect:'weak2' },
-  heavyBlow: { name:'HEAVY BLOW', dmg:1.6, effect:null },
-  block:  { name:'BRACES', dmg:0, effect:'shield3' },
-  voidStep: { name:'VOID STEPS', dmg:0.7, effect:'curse1' },
-  hex:    { name:'HEXES', dmg:0.6, effect:'curse2' },
-  poisonCloud: { name:'POISONS', dmg:0.4, effect:'poison3' },
-  slam:   { name:'SLAMS', dmg:1.4, effect:null },
-  fortify:{ name:'FORTIFIES', dmg:0, effect:'shield4' },
-  soul:   { name:'DRAINS SOUL', dmg:0.8, effect:'weak2' },
-  reap:   { name:'REAPS', dmg:1.5, effect:'bleed2' },
-  consume:{ name:'CONSUMES', dmg:1.2, effect:'weak2' },
-  rage:   { name:'ENRAGES', dmg:0, effect:'rage3' },
-  voidBeam:{ name:'VOID BEAM', dmg:1.8, effect:'curse2' },
-  curse:  { name:'CURSES', dmg:0.3, effect:'curse3' },
+  strike:      { name:'STRIKES',      dmg:1.0, effect:null },
+  gnaw:        { name:'GNAWS',        dmg:0.8, effect:null },
+  stab:        { name:'STABS',        dmg:1.1, effect:null },
+  bite:        { name:'BITES',        dmg:0.9, effect:'bleed1' },
+  howl:        { name:'HOWLS',        dmg:0,   effect:'rage1' },
+  infect:      { name:'INFECTS',      dmg:0.5, effect:'poison2' },
+  rattle:      { name:'RATTLES',      dmg:0,   effect:'weak2' },
+  heavyBlow:   { name:'HEAVY BLOW',   dmg:1.6, effect:null },
+  block:       { name:'BRACES',       dmg:0,   effect:'shield3' },
+  voidStep:    { name:'VOID STEPS',   dmg:0.7, effect:'curse1' },
+  hex:         { name:'HEXES',        dmg:0.6, effect:'curse2' },
+  poisonCloud: { name:'POISONS',      dmg:0.4, effect:'poison3' },
+  slam:        { name:'SLAMS',        dmg:1.4, effect:null },
+  fortify:     { name:'FORTIFIES',    dmg:0,   effect:'shield4' },
+  soul:        { name:'DRAINS SOUL',  dmg:0.8, effect:'weak2' },
+  reap:        { name:'REAPS',        dmg:1.5, effect:'bleed2' },
+  consume:     { name:'CONSUMES',     dmg:1.2, effect:'weak2' },
+  rage:        { name:'ENRAGES',      dmg:0,   effect:'rage3' },
+  voidBeam:    { name:'VOID BEAM',    dmg:1.8, effect:'curse2' },
+  curse:       { name:'CURSES',       dmg:0.3, effect:'curse3' },
+  bleed:       { name:'BLEEDS',       dmg:0.8, effect:'bleed2' },
 };
 
 const RANDOM_EVENTS = [
   {
-    id:'shrine',
-    title:'ANCIENT SHRINE',
-    desc:'A crumbling shrine pulses with dim energy. Offer blood or pray?',
+    id:'shrine', title:'ANCIENT SHRINE',
+    desc:'A crumbling shrine pulses with dim energy.',
     choices:[
-      { text:'Offer blood (lose 6 HP, gain +2 PWR)', fn(p){ p.hp=Math.max(1,p.hp-6); p.power+=2; addLog('Shrine: offered blood. +2 PWR','warn'); updateHUD(); } },
-      { text:'Pray (restore 8 HP)', fn(p){ healPlayer(p,8); addLog('Shrine: prayers answered. +8 HP','heal'); } },
-      { text:'Ignore it', fn(p){ addLog('You pass the shrine in silence.','dim'); } },
+      { text:'Offer blood (-6 HP, +2 PWR)',  fn(p){ p.hp=Math.max(1,p.hp-6); p.power+=2; addLog('Shrine: +2 PWR','warn'); updateHUD(); } },
+      { text:'Pray (restore 8 HP)',           fn(p){ healPlayer(p,8); addLog('Prayers answered.','heal'); } },
+      { text:'Ignore',                        fn(p){ addLog('You pass in silence.','dim'); } },
     ]
   },
   {
-    id:'merchant',
-    title:'WANDERING MERCHANT',
-    desc:'A hooded figure offers wares from a tattered sack.',
+    id:'merchant', title:'WANDERING MERCHANT',
+    desc:'A hooded figure offers wares.',
     choices:[
-      { text:'Buy healing potion (cost 6 gold, heal 15 HP)', fn(p){ if(p.gold>=6){ p.gold-=6; healPlayer(p,15); addLog('Potion: +15 HP','heal'); } else addLog('Not enough gold.','warn'); } },
-      { text:'Buy power crystal (cost 8 gold, +3 PWR)', fn(p){ if(p.gold>=8){ p.gold-=8; p.power+=3; addLog('Crystal: +3 PWR','level'); updateHUD(); } else addLog('Not enough gold.','warn'); } },
-      { text:'Steal (50% success, or take 8 dmg)', fn(p){
-        if(Math.random()<.5){ p.gold+=10; addLog('You steal 10 gold!','loot'); }
-        else { p.hp=Math.max(1,p.hp-8); addLog('Caught! Take 8 dmg.','dmg'); updateHUD(); }
-      } },
-      { text:'Leave', fn(p){ addLog('You walk on.','dim'); } },
+      { text:'Healing potion (6g, +15 HP)',   fn(p){ if(p.gold>=6){ p.gold-=6; healPlayer(p,15); addLog('Potion: +15 HP','heal'); } else addLog('Not enough gold.','warn'); } },
+      { text:'Power crystal (8g, +3 PWR)',    fn(p){ if(p.gold>=8){ p.gold-=8; p.power+=3; addLog('Crystal: +3 PWR','level'); updateHUD(); } else addLog('Not enough gold.','warn'); } },
+      { text:'Steal (50%: +10g, else -8 HP)', fn(p){ if(Math.random()<.5){ p.gold+=10; addLog('Stole 10 gold!','loot'); } else { p.hp=Math.max(1,p.hp-8); addLog('Caught! -8 HP.','dmg'); } updateHUD(); } },
+      { text:'Leave',                         fn(p){ addLog('You walk on.','dim'); } },
     ]
   },
   {
-    id:'fountain',
-    title:'BLOOD FOUNTAIN',
-    desc:'A stone fountain runs crimson. Drink?',
+    id:'fountain', title:'BLOOD FOUNTAIN',
+    desc:'A stone fountain runs crimson.',
     choices:[
-      { text:'Drink (70% heal 12HP, 30% Poison 3)', fn(p){
-        if(Math.random()<.7){ healPlayer(p,12); addLog('Fountain: refreshing! +12 HP','heal'); }
-        else { applyStatus(p,'poison',3); addLog('Fountain: tainted! Poison 3.','dmg'); }
-      } },
-      { text:'Leave it', fn(p){ addLog('Better not.','dim'); } },
+      { text:'Drink (70%: +12 HP, 30%: Poison 3)', fn(p){ if(Math.random()<.7){ healPlayer(p,12); addLog('Refreshing!','heal'); } else { applyStatus(p,'poison',3); addLog('Tainted!','dmg'); } } },
+      { text:'Leave',                              fn(p){ addLog('Better not.','dim'); } },
     ]
   },
   {
-    id:'crypt',
-    title:'SEALED CRYPT',
-    desc:'A crypt door rattles. Force it open or inscribe a ward?',
+    id:'crypt', title:'SEALED CRYPT',
+    desc:'A crypt door rattles.',
     choices:[
-      { text:'Force open (combat risk — spawn extra enemy)', fn(p){ addLog('The crypt bursts open! Something wakes.','warn'); G.extraCombat=true; } },
-      { text:'Ward the door (+1 DEF for next combat)', fn(p){ p.tempDef=(p.tempDef||0)+1; addLog('Ward placed. +1 DEF next fight.','info'); } },
-      { text:'Walk past', fn(p){ addLog('The door remains shut.','dim'); } },
+      { text:'Force open (triggers extra combat)', fn(p){ addLog('Something wakes inside!','warn'); G.extraCombat=true; } },
+      { text:'Ward the door (+1 DEF next combat)', fn(p){ p.tempDef=(p.tempDef||0)+1; addLog('Ward placed.','info'); } },
+      { text:'Walk past',                          fn(p){ addLog('The door stays shut.','dim'); } },
     ]
   },
   {
-    id:'forge',
-    title:'RUINED FORGE',
-    desc:'Ancient flames still burn. A blade hangs above them.',
+    id:'forge', title:'RUINED FORGE',
+    desc:'Ancient flames still burn.',
     choices:[
-      { text:'Temper your weapon (+2 PWR permanent)', fn(p){ if(p.gold>=4){ p.gold-=4; p.power+=2; addLog('Forge: +2 PWR. Cost 4 gold.','level'); updateHUD(); } else { p.power+=1; addLog('Forge: +1 PWR (no gold for full temper).','level'); updateHUD(); } } },
-      { text:'Cool in void water (+2 DEF permanent)', fn(p){ p.defense+=2; addLog('Forge: +2 DEF.','level'); updateHUD(); } },
-      { text:'Leave', fn(p){ addLog('The flames die as you pass.','dim'); } },
+      { text:'Temper weapon (4g or +1 PWR free, +2 PWR if paid)', fn(p){ if(p.gold>=4){ p.gold-=4; p.power+=2; addLog('Forge: +2 PWR.','level'); } else { p.power+=1; addLog('Forge: +1 PWR.','level'); } updateHUD(); } },
+      { text:'Cool in void water (+2 DEF)',         fn(p){ p.defense+=2; addLog('Forge: +2 DEF.','level'); updateHUD(); } },
+      { text:'Leave',                               fn(p){ addLog('The flames die.','dim'); } },
     ]
   },
   {
-    id:'vision',
-    title:'VOID VISION',
-    desc:'Reality warps. You see three paths forward.',
+    id:'vision', title:'VOID VISION',
+    desc:'Reality warps. Three paths forward.',
     choices:[
-      { text:'Follow the light (skip next combat)', fn(p){ G.skipNextCombat=true; addLog('Vision: combat skipped.','info'); } },
-      { text:'Embrace the dark (+3 PWR, Curse 2 on self)', fn(p){ p.power+=3; applyStatus(p,'curse',2); addLog('Vision: +3 PWR, Curse 2.','warn'); updateHUD(); } },
-      { text:'Turn away (nothing happens)', fn(p){ addLog('You look away.','dim'); } },
+      { text:'Follow the light (skip next combat)',      fn(p){ G.skipNextCombat=true; addLog('Combat skipped.','info'); } },
+      { text:'Embrace the dark (+3 PWR, Curse 2 self)',  fn(p){ p.power+=3; applyStatus(p,'curse',2); addLog('+3 PWR, Curse 2.','warn'); updateHUD(); } },
+      { text:'Turn away',                               fn(p){ addLog('You look away.','dim'); } },
     ]
   },
   {
-    id:'chest',
-    title:'IRON CHEST',
+    id:'chest', title:'IRON CHEST',
     desc:'A rusty chest sits in the corner.',
     choices:[
       { text:'Open it', fn(p){
         const roll=Math.random();
         if(roll<.15){ p.hp=Math.max(1,p.hp-10); addLog('Trapped! -10 HP.','dmg'); updateHUD(); }
-        else if(roll<.55){ const g=rng(5,15); p.gold+=g; addLog(`Gold! +${g} gold.`,'loot'); updateHUD(); }
-        else { addLog('A forgotten skill scroll glows inside!','loot'); rewardSkillPick(p,3,'SKILL SCROLL'); }
+        else if(roll<.55){ const g=rng(5,15); p.gold+=g; addLog('Gold! +'+g+'.','loot'); updateHUD(); }
+        else { addLog('A skill scroll glows inside!','loot'); rewardSkillPick(p,3,'SKILL SCROLL'); }
       } },
       { text:'Leave it', fn(p){ addLog('You leave the chest.','dim'); } },
     ]
   },
   {
-    id:'wanderer',
-    title:'LOST WANDERER',
-    desc:'A dying wanderer clutches a sealed scroll.',
+    id:'wanderer', title:'LOST WANDERER',
+    desc:'A dying wanderer clutches a scroll.',
     choices:[
-      { text:'Help them (heal 5 HP, they teach you a skill)', fn(p){ healPlayer(p,5); addLog('Wanderer grateful. A skill revealed!','level'); rewardSkillPick(p,2,'WANDERER GIFT'); } },
-      { text:'Take the scroll (fight them for it)', fn(p){ G.forcedCombat=true; addLog('The wanderer draws a blade!','warn'); } },
-      { text:'Pass', fn(p){ addLog('You leave them to their fate.','dim'); } },
+      { text:'Help them (+5 HP + learn skill)',  fn(p){ healPlayer(p,5); rewardSkillPick(p,2,'WANDERER GIFT'); } },
+      { text:'Take scroll by force (fight them)', fn(p){ G.forcedCombat=true; addLog('They draw a blade!','warn'); } },
+      { text:'Pass',                             fn(p){ addLog('You leave them.','dim'); } },
     ]
   },
   {
-    id:'bonfire',
-    title:'DYING BONFIRE',
+    id:'bonfire', title:'DYING BONFIRE',
     desc:'Embers pulse with residual life.',
     choices:[
-      { text:'Rest (heal 20% max HP, lose 1 turn)', fn(p){ const h=Math.max(1,Math.floor(p.maxHp*.2)); healPlayer(p,h); addLog(`Rested: +${h} HP.`,'heal'); } },
-      { text:'Burn a skill shard (+1 to a random stat)', fn(p){
-        const stats=['power','defense'];
-        const s=stats[Math.floor(Math.random()*stats.length)];
-        if(s==='power') p.power+=1; else p.defense+=1;
-        addLog(`Shard burned: +1 ${s==='power'?'PWR':'DEF'}.`,'level');
+      { text:'Rest (+20% max HP)', fn(p){ const h=Math.max(1,Math.floor(p.maxHp*.2)); healPlayer(p,h); addLog('Rested: +'+h+' HP.','heal'); } },
+      { text:'Burn shard (+1 PWR or DEF)', fn(p){
+        if(Math.random()<.5){ p.power+=1; addLog('Shard: +1 PWR.','level'); }
+        else { p.defense+=1; addLog('Shard: +1 DEF.','level'); }
         updateHUD();
       } },
       { text:'Move on', fn(p){ addLog('The embers fade.','dim'); } },
     ]
   },
   {
-    id:'abyss',
-    title:'THE ABYSS',
-    desc:'A crack in the world leaks void energy. High risk, high reward.',
+    id:'abyss', title:'THE ABYSS',
+    desc:'A crack in the world leaks void energy.',
     choices:[
-      { text:'Absorb void (60% +4 PWR, 40% -10 HP + Curse 3)', fn(p){
+      { text:'Absorb void (60%: +4 PWR, 40%: -10 HP + Curse 3)', fn(p){
         if(Math.random()<.6){ p.power+=4; addLog('Absorbed! +4 PWR.','level'); updateHUD(); }
-        else { p.hp=Math.max(1,p.hp-10); applyStatus(p,'curse',3); addLog('Void burns! -10 HP + Curse 3.','dmg'); updateHUD(); }
+        else { p.hp=Math.max(1,p.hp-10); applyStatus(p,'curse',3); addLog('Void burns! -10 HP.','dmg'); updateHUD(); }
       } },
       { text:'Seal it (+2 DEF, +10 XP)', fn(p){ p.defense+=2; gainXP(p,10); addLog('Sealed: +2 DEF +10 XP.','level'); updateHUD(); } },
-      { text:'Flee', fn(p){ addLog('You run.','dim'); } },
+      { text:'Flee',                     fn(p){ addLog('You run.','dim'); } },
     ]
   },
 ];
@@ -862,33 +824,33 @@ const RANDOM_EVENTS = [
 // ============================================================
 let G = {};
 let combatState = null;
+// Guard: prevent nextStep re-entrance while reward screen is open
+let awaitingReward = false;
 
 function newPlayer() {
   return {
-    hp: 30, maxHp: 30, power: 5, defense: 0,
-    level: 1, xp: 0, xpNext: 20,
-    gold: 0, floor: 1, step: 0,
-    skills: ['slash'],
-    skillCooldowns: {},
-    passives: [],
-    statuses: {},
-    relics: [],
-    tempDef: 0,
-    dodgeBonus: 0,
+    hp:30, maxHp:30, power:5, defense:0,
+    level:1, xp:0, xpNext:20,
+    gold:0, floor:1, step:0,
+    skills:['slash'],
+    skillCooldowns:{},
+    passives:[],
+    statuses:{},
+    relics:[],
+    tempDef:0,
+    dodgeBonus:0,
+    skipTurn:false,
   };
 }
 
 function startGame() {
-  G = {
-    player: newPlayer(),
-    skipNextCombat: false,
-    extraCombat: false,
-    forcedCombat: false,
-    running: true,
-  };
+  G = { player:newPlayer(), skipNextCombat:false, extraCombat:false, forcedCombat:false, running:true };
+  awaitingReward = false;
+  combatState = null;
   document.getElementById('deathScreen').style.display='none';
   document.getElementById('victoryScreen').style.display='none';
   document.getElementById('rewardScreen').style.display='none';
+  document.getElementById('actionArea').innerHTML='';
   clearLog();
   addLog('◈ VOID WALKER BEGINS ◈','info');
   addLog('You descend into the Abyss.','event');
@@ -898,173 +860,173 @@ function startGame() {
 }
 
 // ============================================================
-// CORE HELPERS
+// HELPERS
 // ============================================================
 function rng(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
 function dealDmg(attacker, target, base) {
-  let dmg = base;
-  // Rage modifier
-  if(attacker.statuses?.rage) dmg = Math.floor(dmg*1.4);
-  // Weak modifier
-  if(attacker.statuses?.weak) dmg = Math.floor(dmg*0.6);
-  // Executioner passive
-  if(attacker.passives?.includes('executioner') && target.hp < target.maxHp*.25)
+  let dmg = Math.max(0,base);
+  if(attacker.statuses && attacker.statuses.rage)  dmg = Math.floor(dmg*1.4);
+  if(attacker.statuses && attacker.statuses.weak)  dmg = Math.floor(dmg*0.6);
+  if(attacker.passives && attacker.passives.includes('executioner') && target.hp < target.maxHp*.25)
     dmg = Math.floor(dmg*1.5);
-  // Curse reduces target DEF
-  let def = target.defense||0;
-  if(target.statuses?.curse) def = Math.max(0, def - (target.statuses.curse));
-  // Shield absorbs
-  let shield = target.statuses?.shield||0;
-  let shieldAbsorb = Math.min(shield, dmg);
-  if(shieldAbsorb>0){
-    target.statuses.shield -= shieldAbsorb;
-    if(target.statuses.shield<=0) delete target.statuses.shield;
-    dmg -= shieldAbsorb;
+
+  // Shield absorb
+  const shield = (target.statuses && target.statuses.shield) || 0;
+  if(shield > 0){
+    const absorb = Math.min(shield, dmg);
+    target.statuses.shield -= absorb;
+    if(target.statuses.shield <= 0) delete target.statuses.shield;
+    dmg -= absorb;
   }
+
   // Reflect
-  if(target.statuses?.reflect){
+  if(target.statuses && target.statuses.reflect){
     delete target.statuses.reflect;
-    addLog(`Reflected! Attacker takes ${dmg} dmg.`,'info');
+    addLog('Reflected! Attacker takes '+dmg+' dmg.','info');
     attacker.hp = Math.max(0, attacker.hp - dmg);
     return 0;
   }
+
+  // DEF + curse
+  let def = target.defense || 0;
+  if(target.statuses && target.statuses.curse) def = Math.max(0, def - target.statuses.curse);
   dmg = Math.max(0, dmg - def);
+
+  // Rage: take more
+  if(target.statuses && target.statuses.rage) dmg = Math.floor(dmg*1.3);
+
   // Dodge (player only)
   if(target === G.player){
-    const dChance = (target.passives?.includes('shadowStep') ? 20 : 0) + (target.dodgeBonus||0);
-    if(dChance>0 && Math.random()*100 < dChance){
-      addLog(`You DODGE the attack!`,'info');
+    const dChance = (target.passives.includes('shadowStep') ? 20 : 0) + (target.dodgeBonus||0);
+    if(dChance > 0 && Math.random()*100 < dChance){
+      addLog('You DODGE the attack!','info');
       return 0;
     }
     // Thorn
-    if(target.passives?.includes('thornArmor')){
-      const thornDmg = 2 + (target.relics.includes('thornRing')?3:0);
-      attacker.hp = Math.max(0, attacker.hp - thornDmg);
+    if(target.passives.includes('thornArmor')){
+      const thornDmg = 2 + (target.relics.includes('thornRing') ? 3 : 0);
+      if(attacker && attacker.hp !== undefined) attacker.hp = Math.max(0, attacker.hp - thornDmg);
     }
   }
-  // Rage self-damage
-  if(target.statuses?.rage) dmg = Math.floor(dmg*1.3);
+
   target.hp = Math.max(0, target.hp - dmg);
   return dmg;
 }
 
 function dealDmgTrue(attacker, target, base){
-  let dmg = base;
-  if(attacker.statuses?.rage) dmg=Math.floor(dmg*1.4);
-  if(attacker.statuses?.weak) dmg=Math.floor(dmg*0.6);
+  let dmg = Math.max(0,base);
+  if(attacker.statuses && attacker.statuses.rage) dmg = Math.floor(dmg*1.4);
+  if(attacker.statuses && attacker.statuses.weak) dmg = Math.floor(dmg*0.6);
   if(target === G.player){
-    const dChance=(target.passives?.includes('shadowStep')?20:0)+(target.dodgeBonus||0);
-    if(dChance>0&&Math.random()*100<dChance){ addLog('DODGE!','info'); return 0; }
+    const dChance = (target.passives.includes('shadowStep')?20:0)+(target.dodgeBonus||0);
+    if(dChance>0 && Math.random()*100 < dChance){ addLog('DODGE!','info'); return 0; }
   }
-  target.hp=Math.max(0,target.hp-dmg);
+  target.hp = Math.max(0, target.hp - dmg);
   return dmg;
 }
 
 function applyStatus(target, status, stacks){
-  if(!target.statuses) target.statuses={};
-  target.statuses[status]=(target.statuses[status]||0)+stacks;
-  const label=target===G.player?'Player':'Enemy';
-  addLog(`${label}: ${status.toUpperCase()} +${stacks} (total ${target.statuses[status]})`,'info');
+  if(!target.statuses) target.statuses = {};
+  target.statuses[status] = (target.statuses[status]||0) + stacks;
+  const lbl = (target === G.player) ? 'You' : (combatState ? combatState.enemy.name : 'Enemy');
+  addLog(lbl+': '+status.toUpperCase()+' +'+stacks,'info');
 }
 
-function healPlayer(p,amt){
-  p.hp=Math.min(p.maxHp,p.hp+amt);
-  addLog(`Healed +${amt} HP.`,'heal');
+function healPlayer(p, amt){
+  p.hp = Math.min(p.maxHp, p.hp+amt);
+  addLog('Healed +'+amt+' HP.','heal');
   updateHUD();
 }
 
-function gainXP(p,amt){
-  p.xp+=amt;
-  addLog(`+${amt} XP`,'dim');
-  while(p.xp>=p.xpNext) levelUp(p);
+function gainXP(p, amt){
+  p.xp += amt;
+  addLog('+'+amt+' XP','dim');
+  while(p.xp >= p.xpNext) levelUp(p);
   updateHUD();
 }
 
 function levelUp(p){
-  p.xp-=p.xpNext;
-  p.level+=1;
-  p.xpNext=Math.floor(p.xpNext*1.5);
-  p.maxHp+=5; p.hp=Math.min(p.maxHp,p.hp+5);
-  p.power+=1;
-  addLog(`◈ LEVEL UP! Now Lv.${p.level} ◈`,'level');
+  p.xp -= p.xpNext;
+  p.level += 1;
+  p.xpNext = Math.floor(p.xpNext*1.5);
+  p.maxHp += 5; p.hp = Math.min(p.maxHp, p.hp+5);
+  p.power += 1;
+  addLog('◈ LEVEL UP! Lv.'+p.level+' ◈','level');
   addLog('+5 max HP, +1 PWR','level');
-  // reward skill pick on level up
-  setTimeout(()=>rewardSkillPick(p,3,'LEVEL UP — PICK SKILL'),200);
+  // defer skill pick so it doesn't fire mid-combat teardown
+  awaitingReward = true;
+  setTimeout(()=>rewardSkillPick(p,3,'LEVEL UP — PICK SKILL'),300);
 }
 
 function tickStatuses(entity){
-  const s=entity.statuses;
+  const s = entity.statuses;
   if(!s) return;
-  if(s.poison){ const d=s.poison; entity.hp=Math.max(0,entity.hp-d); addLog(`Poison: -${d} HP`,'dmg'); s.poison=Math.max(0,s.poison-1); if(!s.poison) delete s.poison; }
-  if(s.bleed){ const d=s.bleed; entity.hp=Math.max(0,entity.hp-d); addLog(`Bleed: -${d} HP`,'dmg'); s.bleed=Math.max(0,s.bleed-1); if(!s.bleed) delete s.bleed; }
-  if(s.regen){ const h=3; healPlayer(entity,h); s.regen=Math.max(0,s.regen-1); if(!s.regen) delete s.regen; }
-  if(s.rage && s.rage>0){ s.rage--; if(!s.rage) delete s.rage; }
-  if(s.stun && s.stun>0){ s.stun--; if(!s.stun) delete s.stun; }
-  if(s.curse && s.curse>0){ s.curse--; if(!s.curse) delete s.curse; }
-  if(s.weak && s.weak>0){ s.weak--; if(!s.weak) delete s.weak; }
-  if(s.shield && s.shield<0) delete s.shield;
-  if(s.reflect && s.reflect<0) delete s.reflect;
+  if(s.poison && s.poison>0){ entity.hp=Math.max(0,entity.hp-s.poison); addLog('Poison: -'+s.poison+' HP','dmg'); s.poison--; if(s.poison<=0) delete s.poison; }
+  if(s.bleed  && s.bleed>0) { entity.hp=Math.max(0,entity.hp-s.bleed);  addLog('Bleed: -'+s.bleed+' HP','dmg');   s.bleed--;  if(s.bleed<=0)  delete s.bleed; }
+  if(s.regen  && s.regen>0) { const h=3; if(entity===G.player) healPlayer(entity,h); else { entity.hp=Math.min(entity.maxHp,entity.hp+h); } s.regen--; if(s.regen<=0) delete s.regen; }
+  if(s.rage   && s.rage>0)  { s.rage--;   if(s.rage<=0)   delete s.rage; }
+  if(s.stun   && s.stun>0)  { s.stun--;   if(s.stun<=0)   delete s.stun; }
+  if(s.curse  && s.curse>0) { s.curse--;  if(s.curse<=0)  delete s.curse; }
+  if(s.weak   && s.weak>0)  { s.weak--;   if(s.weak<=0)   delete s.weak; }
 }
 
 // ============================================================
-// HUD / RENDER
+// HUD
 // ============================================================
 function updateHUD(){
-  const p=G.player;
-  document.getElementById('hpCur').textContent=p.hp;
-  document.getElementById('hpMax').textContent=p.maxHp;
-  const hpPct=Math.max(0,p.hp/p.maxHp*100);
-  const bar=document.getElementById('hpBar');
-  bar.style.width=hpPct+'%';
-  bar.className='hp-fill'+(hpPct<30?' low':'');
-  document.getElementById('levelVal').textContent=`Lv.${p.level}`;
-  const xpPct=Math.min(100,p.xp/p.xpNext*100);
-  document.getElementById('xpBar').style.width=xpPct+'%';
-  document.getElementById('powVal').textContent=p.power;
-  document.getElementById('defVal').textContent=p.defense;
-  document.getElementById('floorNum').textContent=p.floor;
-  document.getElementById('stepNum').textContent=p.step;
-  document.getElementById('goldNum').textContent=p.gold;
-  // statuses
-  const sr=document.getElementById('statusRow');
-  const entries=Object.entries(p.statuses||{}).filter(([k,v])=>v>0);
-  if(entries.length===0){ sr.innerHTML=`<span style="color:#2a2a4a;font-size:10px">no active effects</span>`; }
-  else { sr.innerHTML=entries.map(([k,v])=>`<span class="status-tag ${k}">${k.toUpperCase()} ${v}</span>`).join(''); }
-  // relics
-  const rr=document.getElementById('relicsRow');
-  if(p.relics.length===0){ rr.innerHTML=`<span style="color:#2a2a4a;font-size:10px">no relics</span>`; }
-  else { rr.innerHTML=p.relics.map(id=>{ const r=RELICS.find(x=>x.id===id); return r?`<span class="relic-tag" title="${r.desc}">${r.name}</span>`:''; }).join(''); }
+  const p = G.player;
+  document.getElementById('hpCur').textContent = p.hp;
+  document.getElementById('hpMax').textContent = p.maxHp;
+  const hpPct = Math.max(0, p.hp/p.maxHp*100);
+  const bar = document.getElementById('hpBar');
+  bar.style.width = hpPct+'%';
+  bar.className = 'hp-fill'+(hpPct<30?' low':'');
+  document.getElementById('levelVal').textContent = 'Lv.'+p.level;
+  document.getElementById('xpBar').style.width = Math.min(100,p.xp/p.xpNext*100)+'%';
+  document.getElementById('powVal').textContent = p.power;
+  document.getElementById('defVal').textContent = p.defense;
+  document.getElementById('floorNum').textContent = p.floor;
+  document.getElementById('stepNum').textContent = p.step;
+  document.getElementById('goldNum').textContent = p.gold;
+
+  const sr = document.getElementById('statusRow');
+  const entries = Object.entries(p.statuses||{}).filter(([k,v])=>v>0);
+  sr.innerHTML = entries.length
+    ? entries.map(([k,v])=>'<span class="status-tag '+k+'">'+k.toUpperCase()+' '+v+'</span>').join('')
+    : '<span style="color:#2a2a4a;font-size:0.65rem">no active effects</span>';
+
+  const rr = document.getElementById('relicsRow');
+  rr.innerHTML = p.relics.length
+    ? p.relics.map(id=>{ const r=RELICS.find(x=>x.id===id); return r?'<span class="relic-tag" title="'+r.desc+'">'+r.name+'</span>':''; }).join('')
+    : '<span style="color:#2a2a4a;font-size:0.65rem">no relics</span>';
 }
 
 function renderSkills(){
-  const p=G.player;
-  const inv=document.getElementById('skillsInventory');
-  inv.innerHTML='';
+  const p = G.player;
+  const inv = document.getElementById('skillsInventory');
+  inv.innerHTML = '';
   p.skills.forEach(sid=>{
-    const sk=SKILLS[sid];
+    const sk = SKILLS[sid];
     if(!sk) return;
-    const cd=p.skillCooldowns[sid]||0;
-    const btn=document.createElement('div');
-    btn.className='skill-btn '+(sk.type==='passive'?'passive':'active');
-    btn.innerHTML=`${sk.name}<span class="skill-cost">${sk.type==='passive'?'PSV':cd>0?`CD:${cd}`:'RDY'}</span><br><span style="font-size:9px;color:#555;letter-spacing:.3px">${sk.desc}</span>`;
-    inv.appendChild(btn);
+    const cd = p.skillCooldowns[sid]||0;
+    const div = document.createElement('div');
+    div.className = 'skill-btn '+(sk.type==='passive'?'passive':'active');
+    div.innerHTML = sk.name+'<span class="skill-cost">'+(sk.type==='passive'?'PSV':cd>0?'CD:'+cd:'RDY')+'</span>'
+      +'<br><span style="font-size:0.6rem;color:#555">'+sk.desc+'</span>';
+    inv.appendChild(div);
   });
 }
 
 function clearLog(){ document.getElementById('logPanel').innerHTML=''; }
 
-function addLog(msg, cls=''){
-  const panel=document.getElementById('logPanel');
-  const e=document.createElement('div');
-  e.className='log-entry '+(cls||'');
-  e.textContent=msg;
+function addLog(msg, cls){
+  const panel = document.getElementById('logPanel');
+  const e = document.createElement('div');
+  e.className = 'log-entry '+(cls||'');
+  e.textContent = msg;
   panel.appendChild(e);
-  panel.scrollTop=panel.scrollHeight;
-}
-
-function setActionArea(html){
-  document.getElementById('actionArea').innerHTML=html;
+  panel.scrollTop = panel.scrollHeight;
 }
 
 // ============================================================
@@ -1073,61 +1035,55 @@ function setActionArea(html){
 const FLOOR_MAX = 10;
 
 function nextStep(){
-  const p=G.player;
+  if(awaitingReward) return; // wait for reward screen to close
+  const p = G.player;
   if(!G.running) return;
 
-  // Relic floor triggers
+  // Relic floor ticks
   p.relics.forEach(id=>{ const r=RELICS.find(x=>x.id===id); if(r&&r.onFloor) r.onFloor(p); });
   updateHUD();
-
   if(p.hp<=0){ die(); return; }
 
   p.step++;
-  // Floor transition every ~5 steps
-  if(p.step%5===0){ p.floor++; addLog(`◈ DESCENDING TO FLOOR ${p.floor} ◈`,'event'); }
-
+  if(p.step%5===0){ p.floor++; addLog('◈ DESCENDING TO FLOOR '+p.floor+' ◈','event'); }
   if(p.floor>FLOOR_MAX){ victory(); return; }
 
-  // What happens next?
-  if(G.extraCombat){ G.extraCombat=false; startCombat(true); return; }
-  if(G.forcedCombat){ G.forcedCombat=false; startCombat(false); return; }
-  if(G.skipNextCombat){ G.skipNextCombat=false; addLog('Combat skipped by vision.','info'); randomEvent(); return; }
+  if(G.extraCombat)    { G.extraCombat=false;   startCombat(true);  return; }
+  if(G.forcedCombat)   { G.forcedCombat=false;  startCombat(false); return; }
+  if(G.skipNextCombat) { G.skipNextCombat=false; addLog('Combat skipped.','info'); randomEvent(); return; }
 
-  // Floor boss at step multiples
+  // Boss every 5th step (floor change step)
   if(p.step%5===0 && p.floor>1){ startCombat(false,true); return; }
 
-  const roll=Math.random();
-  if(roll<0.52) startCombat(); // combat most common
-  else randomEvent();
+  Math.random()<0.52 ? startCombat() : randomEvent();
 }
 
 // ============================================================
 // EVENTS
 // ============================================================
 function randomEvent(){
-  const p=G.player;
-  const ev=RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)];
-  addLog(`— ${ev.title} —`,'event');
+  const p = G.player;
+  const ev = RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)];
+  addLog('— '+ev.title+' —','event');
 
-  const area=document.getElementById('actionArea');
-  area.innerHTML='';
+  const area = document.getElementById('actionArea');
+  area.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'choices-area';
+  wrap.innerHTML = '<div class="event-title">'+ev.title+'</div><div class="event-desc">'+ev.desc+'</div>';
 
-  const wrap=document.createElement('div');
-  wrap.className='choices-area';
-  wrap.innerHTML=`<div class="event-title">${ev.title}</div><div class="event-desc">${ev.desc}</div>`;
-
-  ev.choices.forEach((c,i)=>{
-    const btn=document.createElement('button');
-    btn.className='choice-btn';
-    btn.textContent=c.text;
-    btn.onclick=()=>{
-      btn.disabled=true;
+  ev.choices.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = c.text;
+    btn.onclick = ()=>{
+      // Disable all buttons to prevent double-tap
+      wrap.querySelectorAll('button').forEach(b=>b.disabled=true);
       c.fn(p);
       updateHUD();
-      setTimeout(()=>{
-        area.innerHTML='';
-        nextStep();
-      },600);
+      if(!awaitingReward){
+        setTimeout(()=>{ area.innerHTML=''; nextStep(); }, 600);
+      }
     };
     wrap.appendChild(btn);
   });
@@ -1140,132 +1096,148 @@ function randomEvent(){
 // COMBAT
 // ============================================================
 function startCombat(extra=false, isBossFloor=false){
-  const p=G.player;
+  const p = G.player;
   if(p.hp<=0){ die(); return; }
 
-  // Pick enemy
   let pool;
-  if(isBossFloor && p.floor>=5){ pool=ENEMIES.filter(e=>e.isBoss); }
-  else if(p.floor<=2){ pool=ENEMIES.filter(e=>e.tier===1); }
-  else if(p.floor<=4){ pool=ENEMIES.filter(e=>e.tier===1||e.tier===2); }
-  else { pool=ENEMIES.filter(e=>e.tier===2||e.tier===3); }
-  if(!pool.length) pool=ENEMIES;
+  if(isBossFloor && p.floor>=5) pool = ENEMIES.filter(e=>e.isBoss);
+  else if(p.floor<=2)           pool = ENEMIES.filter(e=>e.tier===1);
+  else if(p.floor<=4)           pool = ENEMIES.filter(e=>e.tier===1||e.tier===2);
+  else                          pool = ENEMIES.filter(e=>e.tier===2||e.tier===3);
+  if(!pool.length) pool = ENEMIES.filter(e=>!e.isBoss);
+  if(!pool.length) pool = ENEMIES;
 
-  const template=pool[Math.floor(Math.random()*pool.length)];
-  const enemy={
-    name:template.name,
-    hp:template.maxHp + (p.floor-1)*2,
-    maxHp:template.maxHp + (p.floor-1)*2,
-    power:template.power + Math.floor((p.floor-1)*.5),
-    defense:template.defense,
-    xp:template.xp,
-    gold:template.gold,
-    ascii:template.ascii,
-    skills:[...template.skills],
-    skillIdx:0,
-    statuses:{},
-    isBoss:template.isBoss||false,
+  const tpl = pool[Math.floor(Math.random()*pool.length)];
+  const enemy = {
+    name:tpl.name,
+    hp:tpl.maxHp+(p.floor-1)*2,
+    maxHp:tpl.maxHp+(p.floor-1)*2,
+    power:tpl.power+Math.floor((p.floor-1)*.5),
+    defense:tpl.defense,
+    xp:tpl.xp, gold:tpl.gold, ascii:tpl.ascii,
+    skills:[...tpl.skills],
+    skillIdx:0, statuses:{}, isBoss:!!tpl.isBoss,
   };
 
-  combatState = {
-    enemy, turn:0, playerActed:false,
-  };
+  combatState = { enemy, turn:0 };
 
   // Relic combat-start triggers
   p.relics.forEach(id=>{ const r=RELICS.find(x=>x.id===id); if(r&&r.onCombatStart) r.onCombatStart(p,enemy); });
-  // Temp DEF from events
   if(p.tempDef){ p.defense+=p.tempDef; p.tempDef=0; }
 
-  addLog(`◈ COMBAT: ${enemy.name} ◈`,'warn');
+  addLog('◈ COMBAT: '+enemy.name+' ◈','warn');
   renderCombatUI();
 }
 
 function renderCombatUI(){
-  const p=G.player;
-  const c=combatState;
-  const e=c.enemy;
+  const p = G.player;
+  if(!combatState){ safeNextStep(); return; }
+  const e = combatState.enemy;
 
-  const nextSkill=e.skills[e.skillIdx%e.skills.length];
-  const ns=ENEMY_SKILLS[nextSkill]||{name:'?',dmg:1,effect:null};
+  const nextSkillKey = e.skills[e.skillIdx % e.skills.length];
+  const ns = ENEMY_SKILLS[nextSkillKey] || { name:'STRIKES', dmg:1.0, effect:null };
 
-  const area=document.getElementById('actionArea');
-  area.innerHTML='';
+  const area = document.getElementById('actionArea');
+  area.innerHTML = '';
 
   // Enemy box
-  const eBox=document.createElement('div');
-  eBox.className='enemy-area';
-  const eHpPct=Math.max(0,e.hp/e.maxHp*100);
-  const eStatuses=Object.entries(e.statuses||{}).filter(([k,v])=>v>0);
-  eBox.innerHTML=`
-    <div class="enemy-name">${e.isBoss?'⚠ ':''} ${e.name}</div>
-    <div class="enemy-ascii">${e.ascii||''}</div>
-    <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin:2px 0">
-      <span>HP: <span style="color:#e53170">${e.hp} / ${e.maxHp}</span></span>
-      <span>PWR: ${e.power} DEF: ${e.defense}</span>
-    </div>
-    <div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:${eHpPct}%"></div></div>
-    <div class="enemy-intent">NEXT: ${ns.name} ${ns.dmg>0?'('+Math.floor(e.power*ns.dmg)+' DMG)':''}</div>
-    <div class="enemy-status-row">${eStatuses.map(([k,v])=>`<span class="status-tag ${k}">${k.toUpperCase()} ${v}</span>`).join('')}</div>
-  `;
+  const eBox = document.createElement('div');
+  eBox.className = 'enemy-area';
+  const eHpPct = Math.max(0, e.hp/e.maxHp*100);
+  const eStatuses = Object.entries(e.statuses||{}).filter(([k,v])=>v>0);
+  const intentDmg = ns.dmg>0 ? ' ('+Math.floor(e.power*ns.dmg)+' DMG)' : '';
+  eBox.innerHTML =
+    '<div class="enemy-name">'+(e.isBoss?'⚠ ':'')+e.name+'</div>'+
+    '<div class="enemy-ascii">'+e.ascii+'</div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#888;margin:2px 0">'+
+      '<span>HP: <span style="color:#e53170">'+e.hp+'/'+e.maxHp+'</span></span>'+
+      '<span>PWR:'+e.power+' DEF:'+e.defense+'</span>'+
+    '</div>'+
+    '<div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:'+eHpPct+'%"></div></div>'+
+    '<div class="enemy-intent">NEXT: '+ns.name+intentDmg+'</div>'+
+    '<div class="enemy-status-row">'+eStatuses.map(([k,v])=>'<span class="status-tag '+k+'">'+k.toUpperCase()+' '+v+'</span>').join('')+'</div>';
   area.appendChild(eBox);
 
-  // Action buttons
-  const actRow=document.createElement('div');
-  actRow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;padding:6px 0';
+  // BUG FIX: always guarantee at least SLASH is available
+  // If player somehow has no active skills, add slash back
+  const hasActive = p.skills.some(sid=>SKILLS[sid]&&SKILLS[sid].type==='active');
+  if(!hasActive){
+    p.skills.unshift('slash');
+    addLog('[ basic instinct: SLASH restored ]','dim');
+  }
 
-  // Active skills
+  // Action buttons
+  const actRow = document.createElement('div');
+  actRow.className = 'action-row';
+
+  // BUG FIX: reset cooldowns that are stuck (NaN or negative)
+  Object.keys(p.skillCooldowns).forEach(k=>{
+    if(!isFinite(p.skillCooldowns[k]) || p.skillCooldowns[k]<0) delete p.skillCooldowns[k];
+  });
+
   p.skills.filter(sid=>SKILLS[sid]&&SKILLS[sid].type==='active').forEach(sid=>{
-    const sk=SKILLS[sid];
-    const cd=p.skillCooldowns[sid]||0;
-    const btn=document.createElement('button');
-    btn.className='skill-btn';
-    btn.disabled=cd>0||p.skipTurn||e.statuses?.stun;
-    btn.innerHTML=`${sk.name}<span class="skill-cost">${cd>0?`CD:${cd}`:'RDY'}</span>`;
-    btn.title=sk.desc;
-    btn.onclick=()=>playerAction(sid);
+    const sk = SKILLS[sid];
+    const cd = p.skillCooldowns[sid]||0;
+    const stunned = p.skipTurn; // player's own skip-turn
+    const btn = document.createElement('button');
+    btn.className = 'skill-btn';
+    btn.disabled = cd>0 || stunned;
+    btn.innerHTML = sk.name+'<span class="skill-cost">'+(cd>0?'CD:'+cd:'RDY')+'</span>'
+      +'<br><span style="font-size:0.6rem;color:#555">'+sk.desc+'</span>';
+    btn.onclick = ()=>playerAction(sid);
     actRow.appendChild(btn);
   });
 
-  // Flee button
-  const fleeBtn=document.createElement('button');
-  fleeBtn.className='skill-btn';
-  fleeBtn.style.cssText='border-color:#333;color:#555;';
-  fleeBtn.textContent='FLEE (50%)';
-  fleeBtn.onclick=()=>{
+  // Flee
+  const fleeBtn = document.createElement('button');
+  fleeBtn.className = 'skill-btn';
+  fleeBtn.style.cssText = 'border-color:#333;color:#555;';
+  fleeBtn.textContent = 'FLEE (50%)';
+  fleeBtn.onclick = ()=>{
+    fleeBtn.disabled = true;
     if(Math.random()<.5){
-      addLog('You flee successfully!','info');
+      addLog('You flee!','info');
       combatState=null;
-      document.getElementById('actionArea').innerHTML='';
-      nextStep();
+      area.innerHTML='';
+      safeNextStep();
     } else {
-      addLog('Flee failed! Enemy attacks!','warn');
+      addLog('Flee failed!','warn');
       enemyTurn();
     }
   };
   actRow.appendChild(fleeBtn);
-
   area.appendChild(actRow);
   updateHUD();
 }
 
 function playerAction(skillId){
-  const p=G.player;
-  const c=combatState;
-  const e=c.enemy;
-  const sk=SKILLS[skillId];
+  const p = G.player;
+  if(!combatState) return;
+  const e = combatState.enemy;
+  const sk = SKILLS[skillId];
+  if(!sk || sk.type!=='active') return;
 
-  if(p.skipTurn){ p.skipTurn=false; addLog('Your turn is skipped!','warn'); enemyTurn(); return; }
-  if(e.statuses?.stun>0){ /* stun means ENEMY is stunned — player acts freely */ }
+  // Disable all action buttons immediately (prevent double-tap)
+  document.querySelectorAll('.action-row .skill-btn').forEach(b=>b.disabled=true);
 
-  // Use skill
-  const dmg=sk.use(p,e);
-  if(dmg>0) addLog(`${sk.name}: ${dmg} DMG to ${e.name}`,'dmg');
+  if(p.skipTurn){
+    p.skipTurn=false;
+    addLog('Turn skipped (Heavy Strike penalty)!','warn');
+    enemyTurn();
+    return;
+  }
 
-  // Set cooldown
-  if(sk.cooldown>0) p.skillCooldowns[skillId]=(sk.cooldown);
+  const dmg = sk.use(p,e);
+  if(dmg>0) addLog(sk.name+': '+dmg+' DMG to '+e.name,'dmg');
 
-  // Tick player cooldowns
-  Object.keys(p.skillCooldowns).forEach(k=>{ if(k!==skillId && p.skillCooldowns[k]>0){ p.skillCooldowns[k]--; if(p.skillCooldowns[k]<=0) delete p.skillCooldowns[k]; } });
+  // Set cooldown, tick others
+  if(sk.cooldown>0) p.skillCooldowns[skillId]=sk.cooldown;
+  Object.keys(p.skillCooldowns).forEach(k=>{
+    if(k!==skillId && p.skillCooldowns[k]>0){
+      p.skillCooldowns[k]--;
+      if(p.skillCooldowns[k]<=0) delete p.skillCooldowns[k];
+    }
+  });
 
   renderSkills();
   updateHUD();
@@ -1273,36 +1245,42 @@ function playerAction(skillId){
   if(e.hp<=0){ combatVictory(e); return; }
   if(p.hp<=0){ die(); return; }
 
-  // Enemy turn
-  if(e.statuses?.stun){ e.statuses.stun--; if(!e.statuses.stun) delete e.statuses.stun; addLog(`${e.name} is STUNNED — skips turn.`,'info'); endTurn(); }
-  else enemyTurn();
+  // Enemy stunned?
+  if(e.statuses&&e.statuses.stun>0){
+    e.statuses.stun--;
+    if(e.statuses.stun<=0) delete e.statuses.stun;
+    addLog(e.name+' is STUNNED — skips turn.','info');
+    endTurn();
+  } else {
+    enemyTurn();
+  }
 }
 
 function enemyTurn(){
-  const p=G.player;
-  const c=combatState;
-  const e=c.enemy;
+  if(!combatState) return;
+  const p = G.player;
+  const e = combatState.enemy;
 
-  const nextSkill=e.skills[e.skillIdx%e.skills.length];
-  const ns=ENEMY_SKILLS[nextSkill]||{name:'STRIKES',dmg:1,effect:null};
+  const nextSkillKey = e.skills[e.skillIdx % e.skills.length];
+  const ns = ENEMY_SKILLS[nextSkillKey] || { name:'STRIKES', dmg:1.0, effect:null };
   e.skillIdx++;
 
   if(ns.dmg>0){
-    const raw=Math.floor(e.power*ns.dmg);
-    const dmg=dealDmg(e,p,raw);
-    if(dmg>0) addLog(`${e.name} ${ns.name}: ${dmg} DMG`,'dmg');
-    else addLog(`${e.name} ${ns.name}: BLOCKED/DODGED`,'info');
+    const raw = Math.floor(e.power*ns.dmg);
+    const dmg = dealDmg(e,p,raw);
+    addLog(e.name+' '+ns.name+(dmg>0?': '+dmg+' DMG':': BLOCKED/DODGED'),'dmg');
   } else {
-    addLog(`${e.name} ${ns.name}`,'warn');
+    addLog(e.name+' '+ns.name,'warn');
   }
 
-  // Apply effect
+  // Apply status effect
   if(ns.effect){
-    const parts=ns.effect.match(/([a-z]+)([0-9]+)/);
-    if(parts){
-      const statusName=parts[1], stacks=parseInt(parts[2]);
-      const target=ns.effect.startsWith('rage')||ns.effect.startsWith('shield')||ns.effect.startsWith('fortify')?e:p;
-      applyStatus(target,statusName,stacks);
+    const match = ns.effect.match(/([a-z]+)([0-9]+)/);
+    if(match){
+      const sName = match[1], sStacks = parseInt(match[2]);
+      const selfEffects = ['rage','shield','fortify'];
+      const tgt = selfEffects.some(x=>ns.effect.startsWith(x)) ? e : p;
+      applyStatus(tgt, sName, sStacks);
     }
   }
 
@@ -1310,146 +1288,166 @@ function enemyTurn(){
 }
 
 function endTurn(){
-  const p=G.player;
-  const e=combatState?.enemy;
+  if(!combatState) return;
+  const p = G.player;
+  const e = combatState.enemy;
   combatState.turn++;
+
   tickStatuses(p);
   if(e) tickStatuses(e);
-  if(e && e.hp<=0){ combatVictory(e); return; }
+
+  if(e&&e.hp<=0){ combatVictory(e); return; }
   if(p.hp<=0){ die(); return; }
+
   updateHUD();
   renderCombatUI();
 }
 
 function combatVictory(e){
-  const p=G.player;
-  const goldGain=rng(...e.gold);
-  p.gold+=goldGain;
-  addLog(`◈ ${e.name} DEFEATED ◈`,'level');
-  addLog(`Loot: ${goldGain} gold`,'loot');
-
+  const p = G.player;
+  const goldGain = rng(...e.gold);
+  p.gold += goldGain;
+  addLog('◈ '+e.name+' DEFEATED ◈','level');
+  addLog('Loot: '+goldGain+' gold','loot');
   if(p.passives.includes('soulCollector')){ p.power+=1; addLog('Soul Collector: +1 PWR','level'); }
-  gainXP(p,e.xp);
 
-  combatState=null;
+  gainXP(p, e.xp);
+
+  combatState = null;
   document.getElementById('actionArea').innerHTML='';
   updateHUD();
 
-  // Random relic drop on boss
-  if(e.isBoss){ offerRelic(p); return; }
+  if(awaitingReward) return; // levelUp will call rewardSkillPick which calls safeNextStep after
 
-  // Sometimes drop a skill scroll
+  if(e.isBoss){ offerRelic(p); return; }
   if(Math.random()<0.3){ rewardSkillPick(p,2,'COMBAT REWARD'); return; }
 
-  setTimeout(nextStep,400);
+  setTimeout(safeNextStep, 400);
+}
+
+function safeNextStep(){
+  if(!awaitingReward) nextStep();
 }
 
 // ============================================================
 // SKILL & RELIC REWARDS
 // ============================================================
-function getAllSkillIds(){ return Object.keys(SKILLS); }
-
 function rewardSkillPick(p, count, title){
-  const available=getAllSkillIds().filter(id=>!p.skills.includes(id));
-  const picks=[];
-  const pool=[...available];
+  awaitingReward = true;
+  const available = Object.keys(SKILLS).filter(id=>!p.skills.includes(id));
+  const picks = [];
+  const pool = [...available];
   for(let i=0;i<Math.min(count,pool.length);i++){
     const idx=Math.floor(Math.random()*pool.length);
     picks.push(pool.splice(idx,1)[0]);
   }
-  if(!picks.length){ setTimeout(nextStep,200); return; }
+  if(!picks.length){ awaitingReward=false; setTimeout(safeNextStep,200); return; }
 
-  const screen=document.getElementById('rewardScreen');
-  document.getElementById('rewardTitle').textContent=title;
-  const grid=document.getElementById('rewardGrid');
-  grid.innerHTML='';
+  const screen = document.getElementById('rewardScreen');
+  document.getElementById('rewardTitle').textContent = title;
+  const grid = document.getElementById('rewardGrid');
+  grid.innerHTML = '';
+
   picks.forEach(id=>{
-    const sk=SKILLS[id];
-    const btn=document.createElement('button');
-    btn.className='reward-btn';
-    btn.innerHTML=`<span class="${sk.type==='passive'?'tag-passive':'tag-active'}">[${sk.type.toUpperCase()}]</span> ${sk.name}<br><span style="color:#555;font-size:10px">${sk.desc}</span>`;
-    btn.onclick=()=>{
+    const sk = SKILLS[id];
+    const btn = document.createElement('button');
+    btn.className = 'reward-btn';
+    btn.innerHTML = '<span class="'+(sk.type==='passive'?'tag-passive':'tag-active')+'">['+sk.type.toUpperCase()+']</span> '+sk.name
+      +'<br><span style="color:#555;font-size:0.65rem">'+sk.desc+'</span>';
+    btn.onclick = ()=>{
       screen.style.display='none';
+      awaitingReward = false;
       p.skills.push(id);
       if(sk.type==='passive'&&sk.onAcquire) sk.onAcquire(p);
-      addLog(`Skill acquired: ${sk.name}`,'level');
+      addLog('Skill acquired: '+sk.name,'level');
       renderSkills();
       updateHUD();
-      setTimeout(nextStep,200);
+      setTimeout(safeNextStep, 200);
     };
     grid.appendChild(btn);
   });
-  // Skip option
-  const skipBtn=document.createElement('button');
-  skipBtn.className='reward-btn';
-  skipBtn.style.color='#444';
-  skipBtn.textContent='Skip reward';
-  skipBtn.onclick=()=>{ screen.style.display='none'; setTimeout(nextStep,200); };
+
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'reward-btn';
+  skipBtn.style.color = '#444';
+  skipBtn.textContent = 'Skip reward';
+  skipBtn.onclick = ()=>{
+    screen.style.display='none';
+    awaitingReward = false;
+    setTimeout(safeNextStep, 200);
+  };
   grid.appendChild(skipBtn);
-  screen.style.display='flex';
+  screen.style.display = 'flex';
 }
 
 function offerRelic(p){
-  const available=RELICS.filter(r=>!p.relics.includes(r.id));
-  if(!available.length){ setTimeout(nextStep,200); return; }
-  const picks=[];
-  const pool=[...available];
+  awaitingReward = true;
+  const available = RELICS.filter(r=>!p.relics.includes(r.id));
+  if(!available.length){ awaitingReward=false; setTimeout(safeNextStep,200); return; }
+  const picks=[], pool=[...available];
   for(let i=0;i<Math.min(2,pool.length);i++){
     const idx=Math.floor(Math.random()*pool.length);
     picks.push(pool.splice(idx,1)[0]);
   }
-  const screen=document.getElementById('rewardScreen');
-  document.getElementById('rewardTitle').textContent='◈ RELIC REWARD ◈';
-  const grid=document.getElementById('rewardGrid');
-  grid.innerHTML='';
+
+  const screen = document.getElementById('rewardScreen');
+  document.getElementById('rewardTitle').textContent = '◈ RELIC REWARD ◈';
+  const grid = document.getElementById('rewardGrid');
+  grid.innerHTML = '';
+
   picks.forEach(r=>{
-    const btn=document.createElement('button');
-    btn.className='reward-btn';
-    btn.style.cssText='border-color:#ffd70044;color:#ffd700;';
-    btn.innerHTML=`◈ ${r.name}<br><span style="color:#888;font-size:10px">${r.desc}</span>`;
-    btn.onclick=()=>{
+    const btn = document.createElement('button');
+    btn.className = 'reward-btn';
+    btn.style.cssText = 'border-color:#ffd70044;color:#ffd700;';
+    btn.innerHTML = '◈ '+r.name+'<br><span style="color:#888;font-size:0.65rem">'+r.desc+'</span>';
+    btn.onclick = ()=>{
       screen.style.display='none';
+      awaitingReward = false;
       p.relics.push(r.id);
       if(r.onAcquire) r.onAcquire(p);
-      addLog(`Relic acquired: ${r.name}`,'loot');
+      addLog('Relic acquired: '+r.name,'loot');
       updateHUD();
-      setTimeout(nextStep,200);
+      setTimeout(safeNextStep, 200);
     };
     grid.appendChild(btn);
   });
-  const skipBtn=document.createElement('button');
-  skipBtn.className='reward-btn';
-  skipBtn.style.color='#444';
-  skipBtn.textContent='Skip relic';
-  skipBtn.onclick=()=>{ screen.style.display='none'; setTimeout(nextStep,200); };
+
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'reward-btn';
+  skipBtn.style.color = '#444';
+  skipBtn.textContent = 'Skip relic';
+  skipBtn.onclick = ()=>{
+    screen.style.display='none';
+    awaitingReward = false;
+    setTimeout(safeNextStep, 200);
+  };
   grid.appendChild(skipBtn);
-  screen.style.display='flex';
+  screen.style.display = 'flex';
 }
 
 // ============================================================
 // DEATH / VICTORY
 // ============================================================
 function die(){
-  G.running=false;
-  combatState=null;
+  G.running = false;
+  combatState = null;
+  awaitingReward = false;
   document.getElementById('actionArea').innerHTML='';
-  const p=G.player;
-  document.getElementById('deathMsg').textContent=`Fell on Floor ${p.floor}, Step ${p.step}.`;
-  document.getElementById('deathStats').textContent=`Level ${p.level} · ${p.gold} gold · ${p.skills.length} skills · ${p.relics.length} relics`;
+  const p = G.player;
+  document.getElementById('deathMsg').textContent  = 'Fell on Floor '+p.floor+', Step '+p.step+'.';
+  document.getElementById('deathStats').textContent = 'Level '+p.level+' · '+p.gold+' gold · '+p.skills.length+' skills · '+p.relics.length+' relics';
   document.getElementById('deathScreen').style.display='flex';
 }
 
 function victory(){
-  G.running=false;
-  combatState=null;
-  const p=G.player;
-  document.getElementById('victoryMsg').textContent=`You reached the surface. Floor ${p.floor}, Level ${p.level}, ${p.gold} gold.`;
+  G.running = false;
+  combatState = null;
+  const p = G.player;
+  document.getElementById('victoryMsg').textContent = 'You reached the surface. Floor '+p.floor+', Level '+p.level+', '+p.gold+' gold.';
   document.getElementById('victoryScreen').style.display='flex';
 }
 
-// ============================================================
-// BOOT
-// ============================================================
+// Boot
 startGame();
 </script>
 </body>
