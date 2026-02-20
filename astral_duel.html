@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astral Duel</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --panel: #141414;
+    --border: #2a2a2a;
+    --text: #c8c8c8;
+    --dim: #555;
+    --air: #7ec8e3;
+    --fire: #e36b30;
+    --water: #3a7bd5;
+    --earth: #7ab648;
+    --death: #9b59b6;
+    --gold: #d4a843;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; font-size: 13px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  #game { display: flex; flex-direction: column; height: 100vh; padding: 8px; gap: 6px; }
+
+  /* Log */
+  #log { border: 1px solid var(--border); background: var(--panel); padding: 4px 8px; height: 56px; overflow-y: auto; font-size: 11px; color: var(--dim); flex-shrink: 0; }
+  #log p { line-height: 1.5; }
+  #log p.hi { color: var(--gold); }
+
+  /* Mage info strip */
+  .mage-strip { display: flex; align-items: center; gap: 10px; padding: 4px 8px; border: 1px solid var(--border); background: var(--panel); flex-shrink: 0; }
+  .mage-name { font-weight: bold; min-width: 90px; }
+  .hp-bar { position: relative; height: 14px; width: 150px; background: #1a1a1a; border: 1px solid var(--border); }
+  .hp-bar-fill { height: 100%; background: #3a7a3a; transition: width 0.3s; }
+  .hp-label { position: absolute; left: 4px; top: 0; font-size: 10px; line-height: 14px; color: #fff; }
+  .mana-row { display: flex; gap: 4px; flex: 1; }
+  .mana-cell { text-align: center; min-width: 42px; border: 1px solid var(--border); padding: 1px 4px; font-size: 11px; border-radius: 2px; }
+  .mana-cell span { display: block; font-size: 9px; opacity: 0.6; }
+  .el-air   { border-color: var(--air);   color: var(--air); }
+  .el-fire  { border-color: var(--fire);  color: var(--fire); }
+  .el-water { border-color: var(--water); color: var(--water); }
+  .el-earth { border-color: var(--earth); color: var(--earth); }
+  .el-death { border-color: var(--death); color: var(--death); }
+
+  /* Battlefield */
+  #battlefield { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .creature-row { display: flex; gap: 4px; justify-content: center; }
+  .creature-slot { width: 88px; height: 72px; border: 1px dashed var(--border); background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; cursor: default; position: relative; border-radius: 3px; transition: border-color 0.2s; }
+  .creature-slot.has-creature { border-style: solid; }
+  .creature-slot.valid-target { border-color: #555; cursor: pointer; }
+  .creature-slot.valid-target:hover { border-color: var(--gold); background: #1a1a00; }
+  .creature-name { font-weight: bold; font-size: 10px; text-align: center; line-height: 1.2; }
+  .creature-stats { font-size: 10px; margin-top: 2px; }
+  .creature-el-tag { font-size: 9px; opacity: 0.7; }
+  .slot-num { position: absolute; top: 2px; left: 4px; font-size: 9px; color: var(--border); }
+
+  /* Divider */
+  #divider { text-align: center; font-size: 11px; color: var(--dim); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 2px; flex-shrink: 0; }
+
+  /* Hand */
+  #hand-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  #hand-label { font-size: 11px; color: var(--dim); padding: 0 4px 2px; flex-shrink: 0; }
+  #hand { display: flex; gap: 5px; overflow-x: auto; padding: 4px; flex: 1; align-items: flex-start; flex-shrink: 0; }
+  .card { width: 88px; min-width: 88px; height: 110px; border: 1px solid var(--border); background: var(--panel); padding: 5px; cursor: pointer; border-radius: 3px; display: flex; flex-direction: column; gap: 2px; transition: border-color 0.15s, transform 0.15s; position: relative; }
+  .card:hover { transform: translateY(-4px); }
+  .card.selected { transform: translateY(-8px); }
+  .card.unplayable { opacity: 0.4; cursor: not-allowed; }
+  .card.unplayable:hover { transform: none; }
+  .card-name { font-weight: bold; font-size: 10px; line-height: 1.2; }
+  .card-type { font-size: 9px; opacity: 0.6; }
+  .card-cost { position: absolute; top: 4px; right: 5px; font-size: 10px; font-weight: bold; }
+  .card-desc { font-size: 9px; opacity: 0.7; margin-top: auto; line-height: 1.3; }
+  .card-stats { font-size: 10px; font-weight: bold; margin-top: 2px; }
+
+  /* Bottom controls */
+  #controls { display: flex; gap: 6px; align-items: center; padding: 4px; flex-shrink: 0; }
+  button { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 5px 14px; cursor: pointer; font-family: inherit; font-size: 12px; border-radius: 2px; }
+  button:hover { border-color: var(--gold); color: var(--gold); }
+  button:disabled { opacity: 0.3; cursor: not-allowed; }
+  #status-msg { flex: 1; font-size: 11px; color: var(--dim); }
+
+  /* Overlay */
+  #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; display: none; }
+  #overlay.show { display: flex; }
+  #overlay-box { border: 1px solid var(--border); background: #111; padding: 30px 40px; text-align: center; min-width: 300px; }
+  #overlay-box h2 { font-size: 22px; margin-bottom: 12px; color: var(--gold); }
+  #overlay-box p { margin-bottom: 20px; color: var(--dim); font-size: 13px; }
+  .spec-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+  .spec-btn { padding: 8px 12px; font-size: 11px; }
+  .spec-btn:hover { border-color: var(--gold); }
+
+  /* Spell target overlay */
+  #spell-target-bar { display: none; background: #1a0a00; border: 1px solid var(--fire); padding: 4px 10px; font-size: 11px; color: var(--fire); text-align: center; flex-shrink: 0; }
+  #spell-target-bar.show { display: block; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="log"></div>
+
+  <!-- AI strip -->
+  <div class="mage-strip" id="ai-strip">
+    <div class="mage-name" id="ai-name">Necromancer</div>
+    <div class="hp-bar"><div class="hp-bar-fill" id="ai-hp-fill" style="width:100%"></div><span class="hp-label" id="ai-hp-label">50</span></div>
+    <div class="mana-row" id="ai-mana"></div>
+  </div>
+
+  <!-- AI creatures -->
+  <div id="battlefield">
+    <div class="creature-row" id="ai-creatures"></div>
+    <div id="divider" id="divider-row">— BATTLEFIELD —</div>
+    <div class="creature-row" id="player-creatures"></div>
+  </div>
+
+  <!-- Player strip -->
+  <div class="mage-strip" id="player-strip">
+    <div class="mage-name" id="player-name">Battlemage</div>
+    <div class="hp-bar"><div class="hp-bar-fill" id="player-hp-fill" style="width:100%"></div><span class="hp-label" id="player-hp-label">50</span></div>
+    <div class="mana-row" id="player-mana"></div>
+  </div>
+
+  <div id="spell-target-bar">Click a slot or enemy to target spell</div>
+
+  <!-- Hand -->
+  <div id="hand-area">
+    <div id="hand-label">YOUR HAND — click card to select, click slot to place creature / cast spell</div>
+    <div id="hand"></div>
+  </div>
+
+  <div id="controls">
+    <button id="end-turn-btn">End Turn</button>
+    <span id="status-msg"></span>
+  </div>
+</div>
+
+<!-- Overlay for class selection / game over -->
+<div id="overlay" class="show">
+  <div id="overlay-box">
+    <h2>ASTRAL DUEL</h2>
+    <p>Choose your mage specialisation. Each mage has bonus starting levels in their element.</p>
+    <div class="spec-row" id="spec-row"></div>
+    <p style="font-size:11px">Reduce opponent HP to 0 to win. Creatures attack adjacent enemies or hit opponent directly. Element levels rise by 1 each turn.</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const ELEMENTS = ['air','fire','water','earth','death'];
+const EL_COLOR = { air:'#7ec8e3', fire:'#e36b30', water:'#3a7bd5', earth:'#7ab648', death:'#9b59b6' };
+const EL_SYM   = { air:'AIR', fire:'FIR', water:'WAT', earth:'EAR', death:'DEA' };
+
+const SPECS = [
+  { name:'Battlemage',    el:'fire',  bonus:3, desc:'+3 Fire' },
+  { name:'Necromancer',   el:'death', bonus:3, desc:'+3 Death' },
+  { name:'Druid',         el:'earth', bonus:3, desc:'+3 Earth' },
+  { name:'ThunderMage',   el:'air',   bonus:3, desc:'+3 Air' },
+  { name:'StormMage',     el:'water', bonus:3, desc:'+3 Water' },
+  { name:'Wizard',        el:null,    bonus:1, desc:'+1 All' },
+];
+
+// Card definitions: type=creature|spell, el=element, cost=level cost, atk/hp for creatures, effect for spells
+const CARD_DB = [
+  // AIR
+  { id:'a1', name:'Zephyr Scout',   type:'creature', el:'air',   cost:1, atk:1, hp:2, desc:'Flighty scout' },
+  { id:'a2', name:'Storm Hawk',     type:'creature', el:'air',   cost:2, atk:2, hp:2, desc:'Swift raptor' },
+  { id:'a3', name:'Thunderbird',    type:'creature', el:'air',   cost:3, atk:3, hp:3, desc:'Crackling beast' },
+  { id:'a4', name:'Wind Elemental', type:'creature', el:'air',   cost:4, atk:4, hp:4, desc:'Living gale' },
+  { id:'a5', name:'Cyclone',        type:'spell',    el:'air',   cost:2, effect:'damage_all', val:2, desc:'Deal 2 dmg to all enemy creatures' },
+  { id:'a6', name:'Lightning Bolt', type:'spell',    el:'air',   cost:3, effect:'damage_direct', val:4, desc:'Deal 4 damage to opponent' },
+  { id:'a7', name:'Gust',           type:'spell',    el:'air',   cost:1, effect:'damage_creature', val:2, desc:'Deal 2 dmg to one enemy creature' },
+  { id:'a8', name:'Tailwind',       type:'spell',    el:'air',   cost:2, effect:'heal_creature', val:2, desc:'Heal one of your creatures by 2' },
+  // FIRE
+  { id:'f1', name:'Ember Imp',      type:'creature', el:'fire',  cost:1, atk:2, hp:1, desc:'Glass cannon' },
+  { id:'f2', name:'Lava Golem',     type:'creature', el:'fire',  cost:2, atk:2, hp:3, desc:'Slow bruiser' },
+  { id:'f3', name:'Fire Drake',     type:'creature', el:'fire',  cost:3, atk:4, hp:3, desc:'Fierce wyvern' },
+  { id:'f4', name:'Inferno Titan',  type:'creature', el:'fire',  cost:5, atk:6, hp:5, desc:'Devastating giant' },
+  { id:'f5', name:'Fireball',       type:'spell',    el:'fire',  cost:3, effect:'damage_direct', val:5, desc:'Deal 5 damage to opponent' },
+  { id:'f6', name:'Scorch',         type:'spell',    el:'fire',  cost:1, effect:'damage_creature', val:3, desc:'Deal 3 dmg to one enemy creature' },
+  { id:'f7', name:'Conflagration',  type:'spell',    el:'fire',  cost:4, effect:'damage_all', val:3, desc:'Deal 3 dmg to all enemy creatures' },
+  { id:'f8', name:'Heat Shield',    type:'spell',    el:'fire',  cost:2, effect:'buff_atk', val:2, desc:'Give one creature +2 ATK' },
+  // WATER
+  { id:'w1', name:'Sea Sprite',     type:'creature', el:'water', cost:1, atk:1, hp:3, desc:'Elusive wisp' },
+  { id:'w2', name:'Tide Caller',    type:'creature', el:'water', cost:2, atk:2, hp:4, desc:'Wave master' },
+  { id:'w3', name:'Leviathan Pup',  type:'creature', el:'water', cost:4, atk:3, hp:7, desc:'Tanky sea beast' },
+  { id:'w4', name:'Kraken',         type:'creature', el:'water', cost:6, atk:5, hp:8, desc:'Tentacled terror' },
+  { id:'w5', name:'Ice Lance',      type:'spell',    el:'water', cost:2, effect:'damage_creature', val:4, desc:'Deal 4 dmg to one enemy creature' },
+  { id:'w6', name:'Tidal Wave',     type:'spell',    el:'water', cost:4, effect:'damage_all', val:2, desc:'Deal 2 dmg to all enemies and opponent' },
+  { id:'w7', name:'Heal Springs',   type:'spell',    el:'water', cost:2, effect:'heal_self', val:5, desc:'Restore 5 HP to yourself' },
+  { id:'w8', name:'Freeze',         type:'spell',    el:'water', cost:3, effect:'damage_creature', val:6, desc:'Deal 6 dmg to one enemy creature' },
+  // EARTH
+  { id:'e1', name:'Stone Crawler',  type:'creature', el:'earth', cost:1, atk:1, hp:4, desc:'Armoured insect' },
+  { id:'e2', name:'Treant',         type:'creature', el:'earth', cost:3, atk:2, hp:7, desc:'Ancient tree spirit' },
+  { id:'e3', name:'Rock Golem',     type:'creature', el:'earth', cost:4, atk:4, hp:6, desc:'Walking fortress' },
+  { id:'e4', name:'Earth Titan',    type:'creature', el:'earth', cost:6, atk:5, hp:10, desc:'Unmovable colossus' },
+  { id:'e5', name:'Rockslide',      type:'spell',    el:'earth', cost:3, effect:'damage_all', val:3, desc:'Deal 3 dmg to all enemy creatures' },
+  { id:'e6', name:'Entangle',       type:'spell',    el:'earth', cost:2, effect:'damage_creature', val:5, desc:'Deal 5 dmg to one enemy creature' },
+  { id:'e7', name:'Stone Skin',     type:'spell',    el:'earth', cost:2, effect:'buff_hp', val:4, desc:'Give one creature +4 HP' },
+  { id:'e8', name:'Regrowth',       type:'spell',    el:'earth', cost:3, effect:'heal_self', val:8, desc:'Restore 8 HP to yourself' },
+  // DEATH
+  { id:'d1', name:'Skeleton',       type:'creature', el:'death', cost:1, atk:2, hp:2, desc:'Risen undead' },
+  { id:'d2', name:'Wraith',         type:'creature', el:'death', cost:2, atk:3, hp:2, desc:'Haunting spirit' },
+  { id:'d3', name:'Lich',           type:'creature', el:'death', cost:4, atk:4, hp:4, desc:'Undying sorcerer' },
+  { id:'d4', name:'Death Knight',   type:'creature', el:'death', cost:5, atk:6, hp:4, desc:'Dark champion' },
+  { id:'d5', name:'Drain Life',     type:'spell',    el:'death', cost:3, effect:'drain', val:4, desc:'Deal 4 dmg to opponent, heal self 4' },
+  { id:'d6', name:'Bone Shards',    type:'spell',    el:'death', cost:2, effect:'damage_all', val:2, desc:'Deal 2 dmg to all enemy creatures' },
+  { id:'d7', name:'Dark Pact',      type:'spell',    el:'death', cost:1, effect:'damage_direct', val:3, desc:'Deal 3 dmg to opponent, take 1 self' },
+  { id:'d8', name:'Reanimate',      type:'spell',    el:'death', cost:3, effect:'summon_skeleton', val:0, desc:'Summon a Skeleton on your side' },
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let G = null;
+
+function initGame(playerSpec, aiSpec) {
+  function makeMage(spec) {
+    const mana = { air:1, fire:1, water:1, earth:1, death:1 };
+    if (spec.el === null) {
+      ELEMENTS.forEach(e => mana[e] += spec.bonus);
+    } else {
+      mana[spec.el] += spec.bonus;
+    }
+    return {
+      name: spec.name,
+      hp: 50, maxHp: 50,
+      mana,
+      hand: [],
+      creatures: [null,null,null,null,null],
+    };
+  }
+
+  // Build shared deck from all cards, shuffle
+  function buildDeck() {
+    const d = CARD_DB.map(c => ({...c}));
+    for (let i = d.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [d[i],d[j]] = [d[j],d[i]];
+    }
+    return d;
+  }
+
+  G = {
+    player: makeMage(playerSpec),
+    ai: makeMage(aiSpec),
+    playerDeck: buildDeck(),
+    aiDeck: buildDeck(),
+    turn: 'player',
+    turnNum: 1,
+    selectedCard: null,
+    spellTarget: null, // pending spell card
+    gameOver: false,
+  };
+
+  // Draw opening hands
+  for (let i=0;i<4;i++) { drawCard(G.player, G.playerDeck); drawCard(G.ai, G.aiDeck); }
+
+  render();
+  log(`<span style="color:${EL_COLOR[playerSpec.el||'air']}">▶ You play as ${playerSpec.name}.</span> AI is ${aiSpec.name}. Your turn!`, true);
+}
+
+function drawCard(mage, deck) {
+  if (deck.length === 0) return;
+  if (mage.hand.length >= 8) return; // max hand size
+  mage.hand.push({...deck.pop()});
+}
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+function canPlay(mage, card) {
+  return mage.mana[card.el] >= card.cost;
+}
+
+function spendMana(mage, card) {
+  mage.mana[card.el] -= card.cost;
+}
+
+function removeFromHand(mage, cardId) {
+  const idx = mage.hand.findIndex(c => c.id === cardId);
+  if (idx !== -1) mage.hand.splice(idx, 1);
+}
+
+function dealDamageToCreature(creature, dmg) {
+  creature.hp -= dmg;
+}
+
+function applySpell(card, caster, defender) {
+  switch (card.effect) {
+    case 'damage_direct':
+      defender.hp = Math.max(0, defender.hp - card.val);
+      return `dealt ${card.val} damage to opponent`;
+    case 'damage_all':
+      let killed = 0;
+      defender.creatures.forEach((c,i) => {
+        if (c) { c.hp -= card.val; if (c.hp <= 0) { defender.creatures[i]=null; killed++; } }
+      });
+      // tidal wave also hits opponent
+      if (card.id === 'w6') defender.hp = Math.max(0, defender.hp - card.val);
+      return `dealt ${card.val} dmg to all enemies${killed?' ('+killed+' slain)':''}`;
+    case 'damage_creature':
+      return 'NEEDS_TARGET_ENEMY_CREATURE';
+    case 'heal_self':
+      caster.hp = Math.min(caster.maxHp, caster.hp + card.val);
+      return `healed ${card.val} HP`;
+    case 'heal_creature':
+      return 'NEEDS_TARGET_OWN_CREATURE';
+    case 'buff_atk':
+      return 'NEEDS_TARGET_OWN_CREATURE';
+    case 'buff_hp':
+      return 'NEEDS_TARGET_OWN_CREATURE';
+    case 'drain':
+      defender.hp = Math.max(0, defender.hp - card.val);
+      caster.hp = Math.min(caster.maxHp, caster.hp + card.val);
+      return `drained ${card.val} HP from opponent`;
+    case 'dark_pact_deprecated':
+      defender.hp = Math.max(0, defender.hp - card.val);
+      caster.hp = Math.max(0, caster.hp - 1);
+      return `dark pact: deal ${card.val}, take 1`;
+    case 'summon_skeleton':
+      const skel = {...CARD_DB.find(c=>c.id==='d1')};
+      const freeSlot = caster.creatures.findIndex(c=>c===null);
+      if (freeSlot !== -1) { caster.creatures[freeSlot] = skel; return 'summoned a Skeleton'; }
+      return 'no free slot for skeleton';
+    default:
+      return `effect: ${card.effect}`;
+  }
+}
+
+function applySpellOnTarget(card, caster, defender, targetSide, targetIdx) {
+  if (card.effect === 'damage_creature') {
+    const c = defender.creatures[targetIdx];
+    if (!c) return false;
+    c.hp -= card.val;
+    if (c.hp <= 0) { defender.creatures[targetIdx] = null; log(`${c.name} destroyed!`); }
+    else log(`${card.name}: dealt ${card.val} dmg to ${c.name} (${c.hp} HP left)`);
+    return true;
+  }
+  if (card.effect === 'heal_creature') {
+    const c = caster.creatures[targetIdx];
+    if (!c) return false;
+    c.hp = Math.min(c.hp + card.val, c.hp + card.val); // no max tracking
+    log(`${card.name}: healed ${c.name} for ${card.val}`);
+    return true;
+  }
+  if (card.effect === 'buff_atk') {
+    const c = caster.creatures[targetIdx];
+    if (!c) return false;
+    c.atk += card.val;
+    log(`${card.name}: ${c.name} now has ${c.atk} ATK`);
+    return true;
+  }
+  if (card.effect === 'buff_hp') {
+    const c = caster.creatures[targetIdx];
+    if (!c) return false;
+    c.hp += card.val;
+    log(`${card.name}: ${c.name} now has ${c.hp} HP`);
+    return true;
+  }
+  return false;
+}
+
+function needsTarget(card) {
+  return ['damage_creature','heal_creature','buff_atk','buff_hp'].includes(card.effect);
+}
+
+function targetIsEnemy(card) {
+  return card.effect === 'damage_creature';
+}
+
+function placeCreature(mage, card, slot) {
+  mage.creatures[slot] = { name:card.name, el:card.el, atk:card.atk, hp:card.hp };
+}
+
+function endTurnBattle() {
+  // Creatures attack: slot i on player attacks slot i on ai if both present, else direct
+  for (let i = 0; i < 5; i++) {
+    const pc = G.player.creatures[i];
+    const ac = G.ai.creatures[i];
+    if (pc && ac) {
+      // mutual combat
+      ac.hp -= pc.atk;
+      pc.hp -= ac.atk;
+      log(`${pc.name} [${pc.atk}ATK] vs ${ac.name} [${ac.atk}ATK]`);
+    } else if (pc && !ac) {
+      G.ai.hp = Math.max(0, G.ai.hp - pc.atk);
+      log(`${pc.name} attacks opponent for ${pc.atk} dmg`);
+    } else if (!pc && ac) {
+      G.player.hp = Math.max(0, G.player.hp - ac.atk);
+      log(`${ac.name} attacks you for ${ac.atk} dmg`);
+    }
+  }
+  // Remove dead creatures
+  for (let i=0;i<5;i++) {
+    if (G.player.creatures[i] && G.player.creatures[i].hp <= 0) { log(`Your ${G.player.creatures[i].name} falls!`); G.player.creatures[i]=null; }
+    if (G.ai.creatures[i]    && G.ai.creatures[i].hp    <= 0) { log(`${G.ai.creatures[i].name} falls!`);          G.ai.creatures[i]=null; }
+  }
+}
+
+function startNewTurn(mage, deck) {
+  ELEMENTS.forEach(e => mage.mana[e]++);
+  drawCard(mage, deck);
+}
+
+// ============================================================
+// PLAYER ACTIONS
+// ============================================================
+function playerSelectCard(cardId) {
+  if (G.turn !== 'player' || G.gameOver) return;
+  const card = G.player.hand.find(c => c.id === cardId);
+  if (!card || !canPlay(G.player, card)) return;
+
+  // If it's a non-target spell, cast immediately
+  if (card.type === 'spell' && !needsTarget(card)) {
+    const result = applySpell(card, G.player, G.ai);
+    if (result !== 'NEEDS_TARGET_ENEMY_CREATURE') {
+      spendMana(G.player, card);
+      removeFromHand(G.player, cardId);
+      log(`You cast ${card.name}: ${result}`, true);
+      G.selectedCard = null;
+      checkGameOver();
+      render();
+      return;
+    }
+  }
+
+  // For target spells or creatures, select and wait for slot click
+  if (G.selectedCard === cardId) {
+    G.selectedCard = null; // deselect
+  } else {
+    G.selectedCard = cardId;
+  }
+  render();
+}
+
+function playerClickSlot(side, slotIdx) {
+  if (G.turn !== 'player' || G.gameOver || G.selectedCard === null) return;
+  const card = G.player.hand.find(c => c.id === G.selectedCard);
+  if (!card) return;
+
+  if (card.type === 'creature') {
+    if (side !== 'player') { log('Place creatures on your side only!'); return; }
+    if (G.player.creatures[slotIdx] !== null) { log('Slot occupied!'); return; }
+    spendMana(G.player, card);
+    placeCreature(G.player, card, slotIdx);
+    removeFromHand(G.player, G.selectedCard);
+    log(`You summon ${card.name} to slot ${slotIdx+1}`, true);
+    G.selectedCard = null;
+    render();
+    return;
+  }
+
+  // Target spell
+  if (card.type === 'spell' && needsTarget(card)) {
+    const isEnemy = targetIsEnemy(card);
+    const targetMage = isEnemy ? G.ai : G.player;
+    if (isEnemy && side !== 'ai') { log('Target an enemy creature!'); return; }
+    if (!isEnemy && side !== 'player') { log('Target one of your creatures!'); return; }
+    if (!targetMage.creatures[slotIdx]) { log('No creature in that slot!'); return; }
+    spendMana(G.player, card);
+    applySpellOnTarget(card, G.player, targetMage, side, slotIdx);
+    removeFromHand(G.player, G.selectedCard);
+    G.selectedCard = null;
+    checkGameOver();
+    render();
+    return;
+  }
+}
+
+function playerEndTurn() {
+  if (G.turn !== 'player' || G.gameOver) return;
+  G.selectedCard = null;
+  endTurnBattle();
+  checkGameOver();
+  if (G.gameOver) { render(); return; }
+  startNewTurn(G.ai, G.aiDeck);
+  G.turn = 'ai';
+  G.turnNum++;
+  log(`— Turn ${G.turnNum}: AI is thinking... —`);
+  render();
+  setTimeout(aiTurn, 800);
+}
+
+// ============================================================
+// AI
+// ============================================================
+function aiTurn() {
+  if (G.gameOver) return;
+
+  // Score a game state heuristic
+  function heuristic() {
+    let s = 0;
+    s += G.ai.hp - G.player.hp;
+    G.ai.creatures.forEach(c => { if(c) s += c.atk + c.hp; });
+    G.player.creatures.forEach(c => { if(c) s -= c.atk + c.hp; });
+    return s;
+  }
+
+  // Collect playable cards
+  const playable = G.ai.hand.filter(c => canPlay(G.ai, c));
+
+  // Sort: prioritize spells that kill or damage, then creatures to fill slots
+  playable.sort((a,b) => {
+    const scoreCard = c => {
+      if (c.type === 'spell') {
+        if (c.effect === 'damage_direct' || c.effect === 'drain') return 100 + c.val;
+        if (c.effect === 'damage_all') return 80 + c.val;
+        if (c.effect === 'damage_creature') return 70 + c.val;
+        if (c.effect === 'heal_self') return 50 + c.val;
+        return 40;
+      }
+      // creature
+      return c.atk + c.hp;
+    };
+    return scoreCard(b) - scoreCard(a);
+  });
+
+  let actions = 0;
+  for (const card of playable) {
+    if (!canPlay(G.ai, card)) continue;
+    if (actions >= 3) break; // AI plays up to 3 cards
+
+    if (card.type === 'creature') {
+      const freeSlot = G.ai.creatures.findIndex(c => c === null);
+      if (freeSlot === -1) continue;
+      spendMana(G.ai, card);
+      placeCreature(G.ai, card, freeSlot);
+      removeFromHand(G.ai, card.id);
+      log(`AI summons ${card.name} (slot ${freeSlot+1})`);
+      actions++;
+    } else if (card.type === 'spell') {
+      if (needsTarget(card)) {
+        if (targetIsEnemy(card)) {
+          // Pick enemy (player) creature to kill or most threatening
+          let best = -1, bestScore = -1;
+          G.player.creatures.forEach((c,i) => {
+            if (c) {
+              const s = c.atk * 2 + c.hp;
+              if (s > bestScore) { bestScore = s; best = i; }
+            }
+          });
+          if (best === -1) continue;
+          spendMana(G.ai, card);
+          applySpellOnTarget(card, G.ai, G.player, 'player', best);
+          removeFromHand(G.ai, card.id);
+          actions++;
+        } else {
+          // heal/buff own creature
+          let best = -1, bestScore = -1;
+          G.ai.creatures.forEach((c,i) => {
+            if (c) { const s = c.atk; if(s>bestScore){bestScore=s;best=i;} }
+          });
+          if (best === -1) continue;
+          spendMana(G.ai, card);
+          applySpellOnTarget(card, G.ai, G.ai, 'ai', best);
+          removeFromHand(G.ai, card.id);
+          actions++;
+        }
+      } else {
+        // non-target spell
+        const r = applySpell(card, G.ai, G.player);
+        spendMana(G.ai, card);
+        removeFromHand(G.ai, card.id);
+        log(`AI casts ${card.name}: ${r}`);
+        actions++;
+      }
+    }
+    checkGameOver();
+    if (G.gameOver) { render(); return; }
+  }
+
+  // End AI turn: battle phase
+  endTurnBattle();
+  checkGameOver();
+  if (G.gameOver) { render(); return; }
+  startNewTurn(G.player, G.playerDeck);
+  G.turn = 'player';
+  log(`— Turn ${G.turnNum}: Your turn —`, true);
+  render();
+}
+
+function checkGameOver() {
+  if (G.player.hp <= 0 || G.ai.hp <= 0) {
+    G.gameOver = true;
+    const winner = G.player.hp <= 0 ? 'AI' : 'You';
+    log(`★ GAME OVER — ${winner} win! ★`, true);
+    showGameOver(winner);
+  }
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  renderMageStrip('player');
+  renderMageStrip('ai');
+  renderCreatures();
+  renderHand();
+  renderControls();
+}
+
+function renderMageStrip(who) {
+  const mage = G[who];
+  document.getElementById(`${who}-name`).textContent = mage.name;
+  const pct = Math.max(0, mage.hp / mage.maxHp * 100);
+  document.getElementById(`${who}-hp-fill`).style.width = pct + '%';
+  document.getElementById(`${who}-hp-fill`).style.background = pct > 50 ? '#3a7a3a' : pct > 25 ? '#a07020' : '#8a2020';
+  document.getElementById(`${who}-hp-label`).textContent = mage.hp;
+
+  const manaEl = document.getElementById(`${who}-mana`);
+  manaEl.innerHTML = '';
+  ELEMENTS.forEach(e => {
+    const div = document.createElement('div');
+    div.className = `mana-cell el-${e}`;
+    div.innerHTML = `${mage.mana[e]}<span>${EL_SYM[e]}</span>`;
+    manaEl.appendChild(div);
+  });
+}
+
+function renderCreatures() {
+  renderCreatureRow('ai');
+  renderCreatureRow('player');
+}
+
+function renderCreatureRow(who) {
+  const row = document.getElementById(`${who}-creatures`);
+  row.innerHTML = '';
+  const mage = G[who];
+  for (let i = 0; i < 5; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'creature-slot';
+    const num = document.createElement('span');
+    num.className = 'slot-num';
+    num.textContent = i+1;
+    slot.appendChild(num);
+
+    const c = mage.creatures[i];
+    if (c) {
+      slot.classList.add('has-creature');
+      slot.style.borderColor = EL_COLOR[c.el];
+      slot.innerHTML += `<div class="creature-name" style="color:${EL_COLOR[c.el]}">${c.name}</div>
+        <div class="creature-stats">⚔${c.atk} ♥${c.hp}</div>
+        <div class="creature-el-tag">${EL_SYM[c.el]}</div>`;
+      slot.querySelector('.slot-num') || slot.insertAdjacentHTML('afterbegin',`<span class="slot-num">${i+1}</span>`);
+    }
+
+    // Clickability for targeting
+    if (G && G.selectedCard) {
+      const card = G.player.hand.find(c => c.id === G.selectedCard);
+      if (card) {
+        if (card.type === 'creature' && who === 'player' && !mage.creatures[i]) {
+          slot.classList.add('valid-target');
+        } else if (card.type === 'spell' && needsTarget(card)) {
+          if (targetIsEnemy(card) && who === 'ai' && mage.creatures[i]) slot.classList.add('valid-target');
+          if (!targetIsEnemy(card) && who === 'player' && mage.creatures[i]) slot.classList.add('valid-target');
+        }
+      }
+    }
+
+    slot.addEventListener('click', () => playerClickSlot(who, i));
+    row.appendChild(slot);
+  }
+}
+
+function renderHand() {
+  const handEl = document.getElementById('hand');
+  handEl.innerHTML = '';
+  G.player.hand.forEach(card => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    const playable = canPlay(G.player, card) && G.turn === 'player' && !G.gameOver;
+    if (!playable) div.classList.add('unplayable');
+    if (G.selectedCard === card.id) div.classList.add('selected');
+    div.style.borderColor = EL_COLOR[card.el];
+
+    div.innerHTML = `
+      <div class="card-name" style="color:${EL_COLOR[card.el]}">${card.name}</div>
+      <div class="card-type">${card.type === 'creature' ? '🐉 Creature' : '✨ Spell'} · ${EL_SYM[card.el]}</div>
+      <div class="card-cost" style="color:${EL_COLOR[card.el]}">${card.cost}</div>
+      ${card.type === 'creature' ? `<div class="card-stats">⚔${card.atk} ♥${card.hp}</div>` : ''}
+      <div class="card-desc">${card.desc}</div>
+    `;
+
+    if (playable) div.addEventListener('click', () => playerSelectCard(card.id));
+    handEl.appendChild(div);
+  });
+
+  // Target bar
+  const bar = document.getElementById('spell-target-bar');
+  if (G.selectedCard) {
+    const card = G.player.hand.find(c => c.id === G.selectedCard);
+    if (card && card.type === 'spell' && needsTarget(card)) {
+      bar.className = 'show';
+      bar.textContent = `${card.name}: ${targetIsEnemy(card) ? 'click an ENEMY creature slot' : 'click YOUR creature slot'}`;
+    } else if (card && card.type === 'creature') {
+      bar.className = 'show';
+      bar.textContent = `${card.name}: click an EMPTY slot on your side`;
+    } else {
+      bar.className = '';
+    }
+  } else {
+    bar.className = '';
+  }
+}
+
+function renderControls() {
+  const btn = document.getElementById('end-turn-btn');
+  btn.disabled = G.turn !== 'player' || G.gameOver;
+  document.getElementById('status-msg').textContent =
+    G.gameOver ? 'Game Over' :
+    G.turn === 'player' ? `Turn ${G.turnNum} — Your turn` : `Turn ${G.turnNum} — AI thinking...`;
+}
+
+// ============================================================
+// LOG
+// ============================================================
+function log(msg, hi=false) {
+  const logEl = document.getElementById('log');
+  const p = document.createElement('p');
+  if (hi) p.className = 'hi';
+  p.innerHTML = msg;
+  logEl.appendChild(p);
+  logEl.scrollTop = logEl.scrollHeight;
+  // Trim to 40 entries
+  while (logEl.children.length > 40) logEl.removeChild(logEl.firstChild);
+}
+
+// ============================================================
+// OVERLAY
+// ============================================================
+function showGameOver(winner) {
+  const box = document.getElementById('overlay-box');
+  box.innerHTML = `
+    <h2>${winner === 'You' ? '⚡ VICTORY' : '💀 DEFEAT'}</h2>
+    <p>${winner === 'You' ? 'You have bested the AI mage!' : 'The AI overwhelmed you.'}</p>
+    <button onclick="location.reload()">Play Again</button>
+  `;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// Build spec selection overlay
+(function buildSpecOverlay() {
+  const row = document.getElementById('spec-row');
+  SPECS.forEach(spec => {
+    const btn = document.createElement('button');
+    btn.className = 'spec-btn';
+    const col = spec.el ? EL_COLOR[spec.el] : '#d4a843';
+    btn.style.borderColor = col;
+    btn.style.color = col;
+    btn.textContent = `${spec.name}\n${spec.desc}`;
+    btn.style.whiteSpace = 'pre';
+    btn.addEventListener('click', () => {
+      // Pick random AI spec different from player
+      const others = SPECS.filter(s => s.name !== spec.name);
+      const aiSpec = others[Math.floor(Math.random() * others.length)];
+      document.getElementById('overlay').classList.remove('show');
+      initGame(spec, aiSpec);
+    });
+    row.appendChild(btn);
+  });
+})();
+
+document.getElementById('end-turn-btn').addEventListener('click', playerEndTurn);
+</script>
+</body>
+</html>
