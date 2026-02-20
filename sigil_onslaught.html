@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>⚔ SIGIL ONSLAUGHT</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #07070d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Courier New', monospace;
+    color: #ccc;
+    overflow: hidden;
+    user-select: none;
+  }
+  #ui {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 6px 14px;
+    background: #0d0d17;
+    border: 1px solid #2a2a3a;
+    border-bottom: none;
+    font-size: 12px;
+    width: 840px;
+    flex-wrap: wrap;
+  }
+  .bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .bar { width: 110px; height: 9px; background: #181826; border: 1px solid #333; border-radius: 2px; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 0.08s; }
+  #hp-fill  { background: linear-gradient(90deg,#a00,#e74c3c); }
+  #xp-fill  { background: linear-gradient(90deg,#1a6,#2ecc71); }
+  #armor-fill { background: linear-gradient(90deg,#226,#3498db); }
+  #canvas { border: 1px solid #2a2a3a; display: block; cursor: none; }
+
+  /* ── Overlays ── */
+  .overlay-box {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(7,7,13,0.96);
+    border: 1px solid #3a3a5a;
+    padding: 28px 36px;
+    gap: 12px;
+    border-radius: 4px;
+    max-width: 560px;
+    width: 90vw;
+  }
+  .overlay-box h1 { color: #e74c3c; font-size: 28px; letter-spacing: 4px; text-shadow: 0 0 20px #e74c3c88; }
+  .overlay-box h2 { color: #9b59b6; font-size: 18px; letter-spacing: 2px; }
+  .overlay-box .sub { color: #666; font-size: 11px; letter-spacing: 1px; }
+  .overlay-box p   { color: #888; font-size: 12px; text-align:center; line-height:1.6; }
+
+  .class-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 4px; }
+  .class-btn {
+    background: #0f0f1e;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    border-radius: 3px;
+    text-align: left;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .class-btn:hover { background: #1a1a30; border-color: #9b59b6; box-shadow: 0 0 10px #9b59b640; }
+  .class-btn .csym { font-size: 22px; display: block; margin-bottom: 6px; }
+  .class-btn .cname { color: #e5c07b; font-weight: bold; display: block; margin-bottom: 3px; font-size: 13px; }
+  .class-btn .cdesc { color: #666; font-size: 10px; line-height: 1.5; }
+
+  .choice-btn {
+    background: #0f0f1e;
+    border: 1px solid #333;
+    color: #ddd;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    width: 100%;
+    text-align: left;
+    border-radius: 3px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .choice-btn:hover { background: #1a1a30; border-color: #9b59b6; }
+  .choice-btn .name { color: #9b59b6; font-weight: bold; font-size: 13px; }
+  .choice-btn .desc { color: #666; font-size: 10px; display: block; margin-top: 2px; }
+
+  #dead-overlay h2 { color: #e74c3c; font-size: 24px; letter-spacing: 3px; }
+  #dead-overlay button {
+    background: #c0392b; border: none; color: #fff;
+    padding: 10px 30px; cursor: pointer; font-size: 13px;
+    font-family: inherit; border-radius: 3px; margin-top: 4px;
+    transition: background 0.15s;
+  }
+  #dead-overlay button:hover { background: #e74c3c; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; font-size: 12px; color: #888; margin: 6px 0; }
+  .stats-grid span { color: #aaa; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <span style="color:#e74c3c;font-weight:bold;letter-spacing:2px;">⚔ SIGIL ONSLAUGHT</span>
+  <div class="bar-wrap"><span style="color:#e74c3c">❤</span>
+    <div class="bar"><div class="bar-fill" id="hp-fill" style="width:100%"></div></div>
+    <span id="hp-text" style="font-size:11px">100/100</span>
+  </div>
+  <div class="bar-wrap"><span style="color:#3498db">🛡</span>
+    <div class="bar"><div class="bar-fill" id="armor-fill" style="width:0%"></div></div>
+    <span id="armor-text" style="font-size:11px">0</span>
+  </div>
+  <div class="bar-wrap"><span style="color:#2ecc71">✦</span>
+    <div class="bar"><div class="bar-fill" id="xp-fill" style="width:0%"></div></div>
+    <span id="xp-text" style="font-size:11px">0/100</span>
+  </div>
+  <span id="lvl-text" style="color:#e5c07b">Lv 1</span>
+  <span id="timer-text">00:00</span>
+  <span id="kill-text" style="color:#e74c3c">☠ 0</span>
+  <span id="class-text" style="color:#555;margin-left:auto"></span>
+</div>
+
+<canvas id="canvas" width="840" height="580"></canvas>
+
+<!-- START / CLASS SELECT -->
+<div id="start-overlay" class="overlay-box">
+  <h1>⚔ SIGIL ONSLAUGHT</h1>
+  <div class="sub">an auto-battler survival</div>
+  <p>Survive endless waves of hostile sigils.<br>Weapons fire automatically — you just move.</p>
+  <h2 style="margin-top:6px">Choose Your Class</h2>
+  <div class="class-grid" id="class-grid"></div>
+  <p style="font-size:10px;color:#444;margin-top:4px">Arrow Keys or WASD to move</p>
+</div>
+
+<!-- LEVEL UP -->
+<div id="levelup-overlay" class="overlay-box hidden">
+  <h2>⬆ POWER SURGE</h2>
+  <p style="font-size:11px">Choose an upgrade:</p>
+  <button class="choice-btn" id="c1"><span class="name"></span><span class="desc"></span></button>
+  <button class="choice-btn" id="c2"><span class="name"></span><span class="desc"></span></button>
+  <button class="choice-btn" id="c3"><span class="name"></span><span class="desc"></span></button>
+</div>
+
+<!-- DEATH -->
+<div id="dead-overlay" class="overlay-box hidden">
+  <h2>☠ SIGIL EXTINGUISHED</h2>
+  <div class="stats-grid" id="dead-stats"></div>
+  <button onclick="showStart()">▶ PLAY AGAIN</button>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// ── Keys ─────────────────────────────────────────────────────────────────
+const keys = {};
+document.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault(); });
+document.addEventListener('keyup',   e => { keys[e.code] = false; });
+
+// ── Classes ──────────────────────────────────────────────────────────────
+const CLASSES = [
+  {
+    id: 'knight', sym: '⊕', color: '#e5c07b', name: 'Iron Warden',
+    desc: '+50 HP · Starts with armor · Orbs hit harder',
+    apply(p) {
+      p.maxHp += 50; p.hp += 50; p.armor = 20;
+      p.weapons.orb.damage += 10; p.weapons.orb.count = 2;
+    }
+  },
+  {
+    id: 'mage', sym: '∞', color: '#9b59b6', name: 'Void Weaver',
+    desc: 'Starts with Nova · Wide pickup range · Magic bonus dmg',
+    apply(p) {
+      p.weapons.area.level = 1; p.weapons.area.damage += 15;
+      p.weapons.area.rate = 120; p.xpRange = 90;
+    }
+  },
+  {
+    id: 'rogue', sym: '†', color: '#e74c3c', name: 'Crimson Blade',
+    desc: 'Extra speed · 8-way bullets unlocked · Fast fire rate',
+    apply(p) {
+      p.speed += 1.2; p.weapons.projectile.level = 1;
+      p.weapons.projectile.rate = 50; p.weapons.projectile.damage += 5;
+    }
+  },
+  {
+    id: 'ghost', sym: '◌', color: '#00e5ff', name: 'Pale Drifter',
+    desc: 'Very fast · 3 orbs · Starts with all 3 weapons',
+    apply(p) {
+      p.speed += 0.8; p.weapons.orb.count = 3;
+      p.weapons.projectile.level = 1;
+      p.weapons.area.level = 1;
+      p.maxHp -= 20; p.hp -= 20; // glass cannon
+    }
+  },
+];
+
+// ── Enemy templates ───────────────────────────────────────────────────────
+const ENEMY_TYPES = [
+  // Tier 1 – basic
+  { sym:'♦', color:'#e74c3c', hp:25,  spd:1.1, dmg:8,  xp:8,  size:14, tier:1 },
+  { sym:'▸', color:'#e67e22', hp:20,  spd:1.6, dmg:6,  xp:6,  size:12, tier:1 },
+  // Tier 2 – medium
+  { sym:'✦', color:'#f39c12', hp:55,  spd:0.85,dmg:14, xp:18, size:16, tier:2 },
+  { sym:'⬡', color:'#1abc9c', hp:70,  spd:0.7, dmg:12, xp:20, size:18, tier:2 },
+  { sym:'⚙', color:'#3498db', hp:60,  spd:0.9, dmg:10, xp:15, size:16, tier:2 },
+  // Tier 3 – heavy
+  { sym:'★', color:'#8e44ad', hp:110, spd:0.55,dmg:20, xp:30, size:20, tier:3 },
+  { sym:'⚡', color:'#f1c40f', hp:18,  spd:2.2, dmg:5,  xp:10, size:11, tier:3 }, // fast swarm
+  { sym:'Ω', color:'#e74c3c', hp:85,  spd:0.65,dmg:22, xp:28, size:19, tier:3 },
+  // Tier 4 – elites
+  { sym:'☠', color:'#2ecc71', hp:280, spd:0.38,dmg:35, xp:60, size:24, tier:4 }, // tank
+  { sym:'Ψ', color:'#9b59b6', hp:160, spd:1.1, dmg:25, xp:50, size:20, tier:4 }, // fast elite
+  { sym:'⛧', color:'#e74c3c', hp:400, spd:0.25,dmg:40, xp:100,size:28, tier:4 }, // boss-lite
+];
+
+// ── Upgrades ─────────────────────────────────────────────────────────────
+const UPGRADE_POOL = [
+  { name:'⊙ Extra Orb',      desc:'Adds +1 orbiting attack orb',        apply: p => { p.weapons.orb.count++; } },
+  { name:'⊙ Orb Fury',       desc:'Orbs deal +12 more damage',           apply: p => { p.weapons.orb.damage += 12; } },
+  { name:'⊙ Orb Radius',     desc:'Orbs orbit 20px wider',               apply: p => { p.weapons.orb.radius += 20; } },
+  { name:'⊙ Orbit Speed',    desc:'Orbs rotate 40% faster',              apply: p => { p.weapons.orb.speed *= 1.4; } },
+  { name:'· Bullet Barrage', desc:'Unlock/improve 8-way bullet fire',    apply: p => { if(!p.weapons.projectile.level){p.weapons.projectile.level=1;}else{p.weapons.projectile.rate=Math.max(18,p.weapons.projectile.rate-18);} } },
+  { name:'· Piercing Round', desc:'Bullets deal +10 damage',             apply: p => { p.weapons.projectile.damage += 10; } },
+  { name:'· Rapid Fire',     desc:'Bullet speed +1.5',                   apply: p => { p.weapons.projectile.speed += 1.5; } },
+  { name:'✦ Nova Blast',     desc:'Unlock/widen area explosion',         apply: p => { if(!p.weapons.area.level){p.weapons.area.level=1;}else{p.weapons.area.radius+=25;} } },
+  { name:'✦ Nova Power',     desc:'Nova deals +20 more damage',          apply: p => { p.weapons.area.damage += 20; } },
+  { name:'✦ Nova Haste',     desc:'Nova fires 30 frames sooner',         apply: p => { p.weapons.area.rate = Math.max(55,p.weapons.area.rate-30); } },
+  { name:'♥ Vitality',       desc:'+35 Max HP and heal 35',              apply: p => { p.maxHp+=35; p.hp=Math.min(p.hp+35,p.maxHp); } },
+  { name:'🛡 Fortify',        desc:'+20 armor (reduces all damage)',      apply: p => { p.armor = (p.armor||0)+20; } },
+  { name:'⚡ Swiftness',      desc:'Move speed +15%',                     apply: p => { p.speed *= 1.15; } },
+  { name:'◆ Magnetism',      desc:'XP gem pickup range +30px',           apply: p => { p.xpRange = (p.xpRange||50)+30; } },
+  { name:'↺ Regeneration',   desc:'Slowly regenerate HP over time',      apply: p => { p.regen = (p.regen||0)+0.04; } },
+];
+
+// ── State factory ─────────────────────────────────────────────────────────
+function createState(cls) {
+  const p = {
+    x: W/2, y: H/2,
+    vx: 0, vy: 0,
+    speed: 2.9,
+    hp: 100, maxHp: 100,
+    armor: 0, regen: 0,
+    xp: 0, xpNext: 100,
+    level: 1, kills: 0,
+    iframes: 0,
+    xpRange: 55,
+    className: cls.name,
+    classColor: cls.color,
+    classSym: cls.sym,
+    weapons: {
+      orb:        { level:1, count:1,  damage:15, radius:62,  speed:2.2, cd:0 },
+      projectile: { level:0, rate:80,  damage:12, cd:0,       speed:5.2 },
+      area:       { level:0, rate:180, damage:25, cd:0,       radius:80 },
+    }
+  };
+  cls.apply(p);
+  return {
+    paused: false, dead: false,
+    elapsed: 0, p,
+    enemies: [], projectiles: [], gems: [], orbs: [],
+    particles: [], floats: [],
+    spawnTimer: 0,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+let state, lastTime, frameId;
+
+// ── Spawn ─────────────────────────────────────────────────────────────────
+function spawnEnemy(s) {
+  const t = s.elapsed;
+  let maxTier = t < 30 ? 1 : t < 90 ? 2 : t < 180 ? 3 : 4;
+  const pool = ENEMY_TYPES.filter(e => e.tier <= maxTier);
+  const type = pool[Math.floor(Math.random() * pool.length)];
+  const side = Math.floor(Math.random()*4);
+  let x, y;
+  if      (side===0){x=Math.random()*W; y=-26;}
+  else if (side===1){x=W+26; y=Math.random()*H;}
+  else if (side===2){x=Math.random()*W; y=H+26;}
+  else              {x=-26; y=Math.random()*H;}
+  const hpMult = 1 + t/90;
+  s.enemies.push({
+    ...type, x, y,
+    maxHp: type.hp * hpMult,
+    hp:    type.hp * hpMult,
+    iframes:0,
+  });
+}
+
+// ── Weapons ───────────────────────────────────────────────────────────────
+function updateOrbs(s, dt) {
+  const p = s.p, w = p.weapons.orb;
+  s.orbs = [];
+  const base = (s.elapsed * w.speed * 0.055) % (Math.PI*2);
+  for (let i=0; i<w.count; i++){
+    const a = base + (Math.PI*2*i/w.count);
+    const ox = p.x + Math.cos(a)*w.radius;
+    const oy = p.y + Math.sin(a)*w.radius;
+    s.orbs.push({x:ox, y:oy});
+    for (let e of s.enemies){
+      if (e.iframes > 0) continue;
+      const dx=e.x-ox, dy=e.y-oy;
+      if (Math.sqrt(dx*dx+dy*dy) < e.size/2+9){
+        e.hp -= w.damage; e.iframes=18;
+        spawnParticle(s, e.x, e.y, '#f1c40f');
+        spawnFloat(s, e.x, e.y-12, `-${Math.round(w.damage)}`, '#f1c40f');
+      }
+    }
+  }
+}
+
+function fireProjectiles(s) {
+  const p = s.p, w = p.weapons.projectile;
+  for (let i=0; i<8; i++){
+    const a = (Math.PI*2*i)/8;
+    s.projectiles.push({
+      x:p.x, y:p.y,
+      vx:Math.cos(a)*w.speed, vy:Math.sin(a)*w.speed,
+      damage:w.damage, life:90, color:'#3498db',
+    });
+  }
+}
+
+function fireNova(s) {
+  const p = s.p, w = p.weapons.area;
+  spawnParticle(s, p.x, p.y, '#9b59b6', 32, true);
+  for (let e of s.enemies){
+    const dx=e.x-p.x, dy=e.y-p.y;
+    if (Math.sqrt(dx*dx+dy*dy) < w.radius){
+      e.hp -= w.damage;
+      spawnParticle(s, e.x, e.y, '#9b59b6');
+      spawnFloat(s, e.x, e.y-12, `-${Math.round(w.damage)}`, '#9b59b6');
+    }
+  }
+}
+
+// ── Particles & floats ────────────────────────────────────────────────────
+function spawnParticle(s, x, y, color, count=6, ring=false){
+  for (let i=0; i<count; i++){
+    const a = ring ? (Math.PI*2*i/count) : Math.random()*Math.PI*2;
+    const sp = ring ? 1.8 : Math.random()*2+0.5;
+    s.particles.push({
+      x, y,
+      vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+      life:28+Math.random()*12, maxLife:40,
+      color, sym:['·','∗','°','˙'][Math.floor(Math.random()*4)],
+    });
+  }
+}
+function spawnFloat(s, x, y, text, color){
+  s.floats.push({ x, y, text, color, life:40, maxLife:40 });
+}
+
+// ── Level-up ──────────────────────────────────────────────────────────────
+function triggerLevelUp(s) {
+  s.paused = true;
+  s.p.level++;
+  s.p.xp -= s.p.xpNext;
+  s.p.xpNext = Math.floor(s.p.xpNext * 1.28);
+  const pool = [...UPGRADE_POOL];
+  const choices = [];
+  for (let i=0; i<3; i++) choices.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  const ov = document.getElementById('levelup-overlay');
+  ov.classList.remove('hidden');
+  for (let i=0; i<3; i++){
+    const btn = document.getElementById(`c${i+1}`);
+    btn.querySelector('.name').textContent = choices[i].name;
+    btn.querySelector('.desc').textContent = choices[i].desc;
+    btn.onclick = () => {
+      choices[i].apply(s.p);
+      ov.classList.add('hidden');
+      s.paused = false;
+    };
+  }
+}
+
+// ── UI update ─────────────────────────────────────────────────────────────
+function updateUI(s){
+  const p = s.p;
+  document.getElementById('hp-fill').style.width   = `${Math.max(0,(p.hp/p.maxHp)*100)}%`;
+  document.getElementById('hp-text').textContent   = `${Math.ceil(p.hp)}/${p.maxHp}`;
+  document.getElementById('armor-fill').style.width= `${Math.min(100,(p.armor/100)*100)}%`;
+  document.getElementById('armor-text').textContent= `${p.armor}`;
+  document.getElementById('xp-fill').style.width   = `${(p.xp/p.xpNext)*100}%`;
+  document.getElementById('xp-text').textContent   = `${p.xp}/${p.xpNext}`;
+  document.getElementById('lvl-text').textContent  = `Lv ${p.level}`;
+  const sec=Math.floor(s.elapsed);
+  document.getElementById('timer-text').textContent=
+    `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+  document.getElementById('kill-text').textContent = `☠ ${p.kills}`;
+  document.getElementById('class-text').textContent= p.className;
+}
+
+// ── Death ─────────────────────────────────────────────────────────────────
+function showDead(s){
+  const p = s.p;
+  const sec=Math.floor(s.elapsed);
+  const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
+  const el = document.getElementById('dead-stats');
+  el.innerHTML = `
+    <div>Class</div><span style="color:${p.classColor}">${p.classSym} ${p.className}</span>
+    <div>Level</div><span>${p.level}</span>
+    <div>Survived</div><span>${mm}:${ss}</span>
+    <div>Kills</div><span>${p.kills}</span>
+    <div>Max HP</div><span>${p.maxHp}</span>
+    <div>Armor</div><span>${p.armor}</span>
+  `;
+  document.getElementById('dead-overlay').classList.remove('hidden');
+}
+
+function showStart(){
+  document.getElementById('dead-overlay').classList.add('hidden');
+  document.getElementById('levelup-overlay').classList.add('hidden');
+  document.getElementById('start-overlay').classList.remove('hidden');
+  if (frameId) cancelAnimationFrame(frameId);
+}
+
+// ── Build class select ────────────────────────────────────────────────────
+function buildClassGrid(){
+  const grid = document.getElementById('class-grid');
+  grid.innerHTML = '';
+  for (const cls of CLASSES){
+    const btn = document.createElement('button');
+    btn.className = 'class-btn';
+    btn.innerHTML = `
+      <span class="csym" style="color:${cls.color}">${cls.sym}</span>
+      <span class="cname">${cls.name}</span>
+      <span class="cdesc">${cls.desc}</span>
+    `;
+    btn.onclick = () => startGame(cls);
+    grid.appendChild(btn);
+  }
+}
+
+function startGame(cls){
+  document.getElementById('start-overlay').classList.add('hidden');
+  lastTime = null;
+  state = createState(cls);
+  frameId = requestAnimationFrame(gameLoop);
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────
+function gameLoop(ts){
+  if (!lastTime) lastTime = ts;
+  const rawDt = Math.min((ts-lastTime)/16.67, 3);
+  lastTime = ts;
+  const s = state;
+
+  if (!s.paused && !s.dead){
+    s.elapsed += rawDt/60;
+    const p = s.p;
+
+    // Movement
+    let ax=0, ay=0;
+    if (keys['ArrowLeft'] ||keys['KeyA']) ax-=1;
+    if (keys['ArrowRight']||keys['KeyD']) ax+=1;
+    if (keys['ArrowUp']   ||keys['KeyW']) ay-=1;
+    if (keys['ArrowDown'] ||keys['KeyS']) ay+=1;
+    if (ax&&ay){ ax*=0.707; ay*=0.707; }
+    p.vx += ax*0.65; p.vy += ay*0.65;
+    p.vx *= 0.80;    p.vy *= 0.80;
+    const vel=Math.sqrt(p.vx*p.vx+p.vy*p.vy);
+    if (vel>p.speed){p.vx=p.vx/vel*p.speed; p.vy=p.vy/vel*p.speed;}
+    p.x = Math.max(12,Math.min(W-12, p.x+p.vx));
+    p.y = Math.max(12,Math.min(H-12, p.y+p.vy));
+    if (p.iframes>0) p.iframes-=rawDt;
+
+    // Regen
+    if (p.regen) p.hp = Math.min(p.maxHp, p.hp + p.regen*rawDt);
+
+    // Spawn
+    s.spawnTimer += rawDt;
+    const si = Math.max(16, 110 - s.elapsed*2.8);
+    if (s.spawnTimer >= si){
+      const n = 1 + Math.floor(s.elapsed/25);
+      for (let i=0;i<n;i++) spawnEnemy(s);
+      s.spawnTimer=0;
+    }
+
+    // Orbs
+    updateOrbs(s, rawDt);
+
+    // Projectiles weapon
+    if (p.weapons.projectile.level){
+      p.weapons.projectile.cd -= rawDt;
+      if (p.weapons.projectile.cd<=0){
+        fireProjectiles(s);
+        p.weapons.projectile.cd = p.weapons.projectile.rate;
+      }
+    }
+
+    // Nova
+    if (p.weapons.area.level){
+      p.weapons.area.cd -= rawDt;
+      if (p.weapons.area.cd<=0){
+        fireNova(s);
+        p.weapons.area.cd = p.weapons.area.rate;
+      }
+    }
+
+    // Update projectiles
+    for (let i=s.projectiles.length-1;i>=0;i--){
+      const pr=s.projectiles[i];
+      pr.x+=pr.vx*rawDt; pr.y+=pr.vy*rawDt; pr.life-=rawDt;
+      if (pr.life<=0||pr.x<-10||pr.x>W+10||pr.y<-10||pr.y>H+10){
+        s.projectiles.splice(i,1); continue;
+      }
+      let hit=false;
+      for (let j=s.enemies.length-1;j>=0;j--){
+        const e=s.enemies[j];
+        const dx=e.x-pr.x, dy=e.y-pr.y;
+        if (Math.sqrt(dx*dx+dy*dy)<e.size/2+5){
+          e.hp-=pr.damage;
+          spawnParticle(s,pr.x,pr.y,pr.color);
+          spawnFloat(s,e.x,e.y-14,`-${Math.round(pr.damage)}`,'#3498db');
+          s.projectiles.splice(i,1); hit=true; break;
+        }
+      }
+    }
+
+    // Update enemies
+    for (let i=s.enemies.length-1;i>=0;i--){
+      const e=s.enemies[i];
+      if (e.iframes>0) e.iframes-=rawDt;
+      const dx=p.x-e.x, dy=p.y-e.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if (d>1){ e.x+=(dx/d)*e.spd*rawDt; e.y+=(dy/d)*e.spd*rawDt; }
+
+      // Damage player
+      if (d < e.size/2+13){
+        const rawDmg = e.dmg * rawDt * 0.055;
+        const reduced = rawDmg * (100/(100+(p.armor||0)));
+        p.hp -= reduced;
+        if (p.hp<=0){ p.hp=0; s.dead=true; showDead(s); }
+      }
+
+      // Kill
+      if (e.hp<=0){
+        spawnParticle(s,e.x,e.y,e.color,12);
+        s.gems.push({x:e.x,y:e.y,xp:e.xp,color:'#2ecc71',vy:-0.8});
+        p.kills++;
+        s.enemies.splice(i,1);
+      }
+    }
+
+    // Gems
+    const pr2 = p.xpRange||55;
+    for (let i=s.gems.length-1;i>=0;i--){
+      const g=s.gems[i];
+      g.y += g.vy||0; g.vy = Math.min((g.vy||0)+0.04, 0.5);
+      const dx=p.x-g.x, dy=p.y-g.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if (d<pr2){
+        g.x+=(dx/d)*Math.min(d,7)*rawDt;
+        g.y+=(dy/d)*Math.min(d,7)*rawDt;
+        if (d<16){
+          p.xp+=g.xp; s.gems.splice(i,1);
+          if (p.xp>=p.xpNext) triggerLevelUp(s);
+        }
+      }
+    }
+
+    // Particles
+    for (let i=s.particles.length-1;i>=0;i--){
+      const pt=s.particles[i];
+      pt.x+=pt.vx*rawDt; pt.y+=pt.vy*rawDt; pt.life-=rawDt;
+      if (pt.life<=0) s.particles.splice(i,1);
+    }
+
+    // Floats
+    for (let i=s.floats.length-1;i>=0;i--){
+      const f=s.floats[i];
+      f.y-=0.5*rawDt; f.life-=rawDt;
+      if (f.life<=0) s.floats.splice(i,1);
+    }
+
+    updateUI(s);
+  }
+
+  // ── DRAW ─────────────────────────────────────────────────────────────
+  ctx.fillStyle='#07070d';
+  ctx.fillRect(0,0,W,H);
+
+  // Subtle grid
+  ctx.strokeStyle='#0e0e1a'; ctx.lineWidth=1;
+  for (let gx=0;gx<W;gx+=44){
+    ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
+  }
+  for (let gy=0;gy<H;gy+=44){
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke();
+  }
+
+  const p=state.p;
+
+  // Nova ring
+  if (p.weapons.area.level){
+    const aw=p.weapons.area;
+    const prog=Math.max(0,1-aw.cd/aw.rate);
+    ctx.strokeStyle=`rgba(155,89,182,${prog*0.25})`;
+    ctx.lineWidth=1; ctx.setLineDash([3,5]);
+    ctx.beginPath(); ctx.arc(p.x,p.y,aw.radius,0,Math.PI*2*prog); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Gems
+  ctx.font='13px monospace';
+  for (const g of state.gems){
+    ctx.fillStyle='#2ecc71';
+    ctx.fillText('◆',g.x-6,g.y+5);
+  }
+
+  // Particles
+  for (const pt of state.particles){
+    ctx.globalAlpha=pt.life/pt.maxLife;
+    ctx.fillStyle=pt.color;
+    ctx.font='11px monospace';
+    ctx.fillText(pt.sym,pt.x-4,pt.y+4);
+  }
+  ctx.globalAlpha=1;
+
+  // Orbs
+  for (const o of state.orbs){
+    const grd=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,13);
+    grd.addColorStop(0,'rgba(241,196,15,0.65)');
+    grd.addColorStop(1,'rgba(241,196,15,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(o.x,o.y,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#f1c40f'; ctx.font='13px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('○',o.x,o.y);
+  }
+
+  // Projectiles
+  for (const pr of state.projectiles){
+    ctx.fillStyle=pr.color; ctx.font='11px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('·',pr.x,pr.y);
+  }
+
+  // Enemies
+  for (const e of state.enemies){
+    ctx.save();
+    // HP bar
+    const bw=e.size+8;
+    ctx.fillStyle='#1a1a1a';
+    ctx.fillRect(e.x-bw/2, e.y-e.size/2-9, bw, 4);
+    ctx.fillStyle=e.tier>=4?'#f1c40f':'#c0392b';
+    ctx.fillRect(e.x-bw/2, e.y-e.size/2-9, bw*(e.hp/e.maxHp), 4);
+    // Symbol
+    ctx.fillStyle=e.color;
+    ctx.font=`${e.size}px monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(e.sym,e.x,e.y);
+    ctx.restore();
+  }
+
+  // Float damage numbers
+  for (const f of state.floats){
+    ctx.globalAlpha=f.life/f.maxLife;
+    ctx.fillStyle=f.color;
+    ctx.font='bold 11px monospace';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(f.text,f.x,f.y);
+  }
+  ctx.globalAlpha=1;
+
+  // Player glow
+  const pgrd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,24);
+  pgrd.addColorStop(0,`${p.classColor}44`);
+  pgrd.addColorStop(1,`${p.classColor}00`);
+  ctx.fillStyle=pgrd; ctx.beginPath(); ctx.arc(p.x,p.y,24,0,Math.PI*2); ctx.fill();
+
+  // Player symbol
+  ctx.fillStyle = p.iframes>5 ? '#ffffff' : p.classColor;
+  ctx.font='bold 20px monospace';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(p.classSym, p.x, p.y);
+
+  // Hint
+  if (state.elapsed<6){
+    const a=Math.min(1,(6-state.elapsed)*0.4);
+    ctx.globalAlpha=a;
+    ctx.fillStyle='#666';
+    ctx.font='11px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText('Arrow Keys / WASD to move  ·  weapons fire automatically',W/2,H-10);
+    ctx.globalAlpha=1;
+  }
+
+  frameId=requestAnimationFrame(gameLoop);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+buildClassGrid();
+</script>
+</body>
+</html>
+
